@@ -1,6 +1,15 @@
     org $1000
 
 *-------------------------------------------------------
+* Name: Joshua Dunne
+* C00241588
+* Date(s): 21/01/19
+* Estimated Time Taken: 20 Hours
+* Actual Time Taken: ? Hours
+* Known Bugs:
+*-------------------------------------------------------
+
+*-------------------------------------------------------
 *Choose to be a Worker or a God 
 *https://www.avalon-rpg.com/
 *-------------------------------------------------------
@@ -284,6 +293,7 @@ health:     ds.w    1
 score:      ds.w    1 reserve space for score
 
     end start
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
