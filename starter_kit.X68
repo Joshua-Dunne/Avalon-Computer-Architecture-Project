@@ -1,13 +1,13 @@
-    org $1000
+        org $1000
 
 *-------------------------------------------------------
 * Name: Joshua Dunne
 * C00241588
-* Date(s): 21/01/19
+* Date(s): 11/02/19
 * Estimated Time Taken: 20 Hours
 * Actual Time Taken: ? Hours
 * Known Bugs:
-*-------------------------------------------------------
+*------------------------------------------------------
 
 *-------------------------------------------------------
 *Choose to be a Worker or a God 
@@ -19,20 +19,20 @@
 *Add additional validation values as required
 *-------------------------------------------------------
 exit        EQU 0      used to exit assembly program
-min_feed    EQU 100    min feed requirement
 min_potions EQU 1      min number of potions
 max_potions EQU 9      max number of potions
 min_weapons EQU 6      min weapons
 win_point   EQU 5      points accumilated on win
 lose_point  EQU 8      points deducted on a loss
 
-mine_loc    EQU 100    example for a hit
+mine_loc    EQU 100    A location where a mine is found
 
 
 *Start of Game
 start:
     move.b  #100,$4000 put score/health in memory location $4000
     lea     $4000,A3   assign address A3 to that memory location
+    move.w  #500,$4050 put money in memory location $4020
 
 
     bsr     welcome    branch to the welcome subroutine
@@ -59,6 +59,10 @@ welcome:
     lea     welcome_msg,A1  assign message to address register A1
     move.b  #14,D0          move literal 14 to DO
     trap    #15             trap and interpret value in D0
+    move.b  #4,D0           move literal 3 to D0
+    trap    #15             trap and interpret value in D0 (get input from user)
+    cmp     #exit,D1
+    beq     end         if SR Z register contains 1 beq => Branch Equals
     bsr     endl            branch to endl subroutine
     rts                     return from welcome: subroutine
 
@@ -270,14 +274,13 @@ welcome_msg:    dc.b    '*******************************************************
                 dc.b    'Avalon: The Legend Lives'
                 dc.b    $0D,$0A
                 dc.b    '************************************************************'
-                dc.b    $0D,$0A,0
-potion_msg:     dc.b    'Feed load (each horse needs at least 100 units of feed)'
                 dc.b    $0D,$0A
-                dc.b    'Enter feed load : ',0
+                dc.b    'Enter 1 to Start, Enter 0 to Quit: ',0
 potions_msg:    dc.b    'Number of potions : ',0
+potion_msg:    dc.b    'Number of potions : ',0
 weapons_msg:    dc.b    'Each quest need at least 2 Weapons'
                 dc.b    $0D,$0A
-                dc.b    'minimum requirement is 2 i.e. Sword x 1 and Speer x 1.'
+                dc.b    'minimum requirement is 2 i.e. Sword x 1 and Spear x 1.'
                 dc.b    $0D,$0A
                 dc.b    'Enter # of weapons : ',0
 gameplay_msg:   dc.b    'Add Gameplay !',0
@@ -289,10 +292,15 @@ loop_msg:       dc.b    '.',0
 replay_msg:     dc.b    'Enter 0 to Quit any other number to replay : ',0
 hud_msg:        dc.b    'Score : ',0
 
-health:     ds.w    1
+health:     ds.w    1 Player's health
 score:      ds.w    1 reserve space for score
 
     end start
+
+
+
+
+
 
 *~Font name~Courier New~
 *~Font size~10~
