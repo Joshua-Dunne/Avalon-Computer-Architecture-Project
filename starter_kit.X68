@@ -109,7 +109,7 @@ welcome:
     move.b  #14,D0
     trap    #15
     
-    move.l   #300,D1     delay in 1/100th of seconds (2 seconds)
+    move.l   #600,D1     delay in 1/100th of seconds (2 seconds)
     moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
     trap     #15         trap and interpret value in D0
     
@@ -235,13 +235,17 @@ potions:
     move.b  #14,D0
     trap    #15 put in a line break
     
-    move.l   #300,D1     delay in 1/100th of seconds (2 seconds)
+    move.l   #1200,D1     delay in 1/100th of seconds (2 seconds)
     moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
     trap     #15         trap and interpret value in D0
     
     move.b  #11,d0      clear screen
     move.w  #$ff00,d1
     trap    #15 
+    
+    move.l   #300,D1     delay in 1/100th of seconds (2 seconds)
+    moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
+    trap     #15         trap and interpret value in D0
 
     bsr     decorate
     rts
