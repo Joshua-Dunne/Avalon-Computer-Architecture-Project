@@ -5,7 +5,7 @@
 * C00241588
 * Date(s): 11/02/19
 * Estimated Time Taken: 20 Hours
-* Actual Time Taken: ~2 Hour(s)
+* Actual Time Taken: ~4 Hour(s)
 * Known Bugs:
 *------------------------------------------------------
 
@@ -21,25 +21,31 @@
 exit        EQU 0      used to exit assembly program
 min_potions EQU 1      min number of potions
 max_potions EQU 20     max number of potions
-min_weapons EQU 6      min weapons
+min_weapons EQU 1      min weapons
+max_weapons EQU 15      max weapons
 win_point   EQU 5      points accumilated on win
 lose_point  EQU 8      points deducted on a loss
+RED     EQU             $000000FF
+CYAN    EQU             $00FFFF00
+WHITE   EQU             $00FFFFFF
+FONT    EQU             $01090000
+health:     ds.w    100 Player's health
+score:      ds.w    1 reserve space for score
+gold:       dc.w    5000 gold player has (starts at 5000)
+potion_count:    dc.w    0 potions player has (starts at 0)
+weapon_count:    dc.w    5 number of weapons player has (starts at 5)
+feed:       dc.w    0 amount of food for horse (starts at 0)
+
 
 mine_loc    EQU 100    A location where a mine is found
 
 
 *Start of Game
 start:
-    move.b  #100,$4000 put score/health in memory location $4000
-    lea     $4000,A3   assign address A3 to that memory location
-    move.w  #5000,$4050 put gold in memory location $4050
-    lea     $4050,A4    assign address A4 to that memory location
-    move.b  #0,$4100    put potions in memory location $4100
-    lea     $4100,A5    assign address A5 to that memory location
-    move.w  #1000,$4150 put team health in memory location $4150
-    lea     $4150,A6    assign address A6 to that memory location
-    
 
+    LEA gold,A4
+    LEA potion_count,A5
+    LEA weapon_count,A6
 
     bsr     welcome    branch to the welcome subroutine
     bsr     input      branch to the input subroutine
@@ -62,9 +68,25 @@ end:
 *-------------------------------------------------------
 welcome:
     bsr     endl            branch to endl subroutine
+    
+    move.l #RED,D1
+    move.l #FONT,D2
+    move.b  #21,D0
+    trap    #15
+    
+    clr     D1
+    
     lea     welcome_msg,A1  assign message to address register A1
     move.b  #14,D0          move literal 14 to DO
     trap    #15             trap and interpret value in D0
+    
+    move.l #CYAN,D1
+    move.l #FONT,D2
+    move.b  #21,D0
+    trap    #15
+
+    clr     D1
+    
     move.b  #4,D0           move literal 3 to D0
     trap    #15             trap and interpret value in D0 (get input from user)
     cmp     #exit,D1
@@ -74,12 +96,20 @@ welcome:
     move.b  #11,d0      clear screen
     move.w  #$ff00,d1
     trap    #15  
+  
+    
+    move.l #WHITE,D1
+    move.l #FONT,D2
+    move.b  #21,D0
+    trap    #15
+    
+    clr     D1
     
     lea     intro_msg,A1
     move.b  #14,D0
     trap    #15
     
-    move.l   #600,D1     delay in 1/100th of seconds (2 seconds)
+    move.l   #300,D1     delay in 1/100th of seconds (2 seconds)
     moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
     trap     #15         trap and interpret value in D0
     
@@ -143,6 +173,18 @@ draw:
 potions:
     bsr     endl
     bsr     decorate
+    lea     gold_msg,A1
+    move.b  #14,D0
+    trap    #15 display message saying how much gold user has
+    
+    move.w  (A4),D1
+    move.b  #3,D0
+    trap    #15 display the number of gold
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
     lea     potions_msg,A1
     move.b  #14,D0
     trap    #15 display potion message
@@ -156,18 +198,50 @@ potions:
     cmp     #max_potions,D1
     bgt     potion_error_max compare more than minimum amount of potions allowed, branch if more
     
+    clr     D2 clear d2 in case anything else has used it
+    
     move.b  D1, D2 move the number of potions entered into data register 2
     mulu.w  #100, D2    multiply that number by 100 (to get the cost)
     
-    cmp.w (A4),D2 compare the cost against the money the user has
+    move.w (A4),D3 temporarily move the amount of money they have into a data register
+    
+    cmp.w   D3,D2 compare the cost against the potions the user has
+    
     bgt potion_error_money if they dont have enough, tell them
     
     move.b  D1, (A5) otherwise move the amount of potions they bought into number A5
     
+    clr     D2 clear d2 in case anything else has used it
+    
+    move.w (A4),D3 temporarily move the amount of money they have into a data register
+    
+    cmp.w   D3,D2 compare the cost against the money the user has
+    bgt     weapon_error_money if they dont have enough, tell them
+    
+    clr     D3 we dont need the number in the register anymore if it goes through
+    
+    
     sub.w   D2,(A4) take away the cost
     
-    move.b  #4,D0
-    trap    #15 wait for input 
+    lea     gold_msg,A1
+    move.b  #14,D0
+    trap    #15 display message saying how much gold user has
+    
+    move.w  (A4),D1
+    move.b  #3,D0
+    trap    #15 display the number of gold
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
+    move.l   #300,D1     delay in 1/100th of seconds (2 seconds)
+    moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
+    trap     #15         trap and interpret value in D0
+    
+    move.b  #11,d0      clear screen
+    move.w  #$ff00,d1
+    trap    #15 
 
     bsr     decorate
     rts
@@ -178,8 +252,6 @@ potion_error_max:
     trap    #15
     bra     potions
 
-
-
 potion_error_min:
     lea     potions_error_min,A1
     move.b  #14,D0
@@ -187,7 +259,7 @@ potion_error_min:
     bra     potions
     
 potion_error_money:
-    lea     potions_error_money,A1
+    lea     error_money,A1
     move.b  #14,D0
     trap    #15
     bra     potions
@@ -213,11 +285,90 @@ potionsremain:
 weapons:
     bsr     endl
     bsr     decorate
+    
+    lea     gold_msg,A1
+    move.b  #14,D0
+    trap    #15 display message saying how much gold user has
+    
+    move.w  (A4),D1
+    move.b  #3,D0
+    trap    #15 display the number of gold
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
     lea     weapons_msg,A1
     move.b  #14,D0
-    trap    #15
+    trap    #15 display weapon shop message
+    
+    move.b  #4,D0
+    trap    #15 get input on how many weapons user wants
+    
+    cmp     #min_weapons,D1
+    blt     weapon_error_min compare less than minimum amount of weapons allowed, branch if less
+    
+    cmp     #max_weapons,D1
+    bgt     weapon_error_max compare more than maximum amount of weapons allowed, branch if more
+    
+    clr     D2 clear d2 in case anything else has used it
+    
+    move.b  D1, D2      move the number of weapons entered into data register 2
+    mulu.w  #250, D2    multiply that number by 250 (to get the cost)
+    
+    move.w (A4),D3 temporarily move the amount of money they have into a data register
+    
+    cmp.w   D3,D2 compare the cost against the money the user has
+    bgt     weapon_error_money if they dont have enough, tell them
+    
+    clr     D3 we dont need the number in the register anymore if it goes through
+    
+    move.b  D1, (A6) otherwise move the amount of weapons they bought into number A6 
+    
+    sub.w   D2,(A4) take away the cost
+    
+    lea     gold_msg,A1
+    move.b  #14,D0
+    trap    #15 display message saying how much gold user has
+    
+    move.w  (A4),D1
+    move.b  #3,D0
+    trap    #15 display the number of gold
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
+    move.l   #300,D1     delay in 1/100th of seconds (2 seconds)
+    moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
+    trap     #15         trap and interpret value in D0
+ 
+    move.b  #11,d0      clear screen
+    move.w  #$ff00,d1
+    trap    #15 
+ 
     bsr     decorate
     rts
+    
+weapon_error_max:
+    lea     weapons_error_max,A1
+    move.b  #14,D0
+    trap    #15
+    bra     weapons
+
+weapon_error_min:
+    lea     weapons_error_min,A1
+    move.b  #14,D0
+    trap    #15
+    bra     weapons
+    
+weapon_error_money:
+    lea     error_money,A1
+    move.b  #14,D0
+    trap    #15
+    clr     D3 reset this number for use later
+    clr     D2 reset this number for use later
+    bra     weapons
 
 *-------------------------------------------------------
 *---Game Play (Quest Progress)--------------------------
@@ -351,32 +502,49 @@ intro_msg:           dc.b    $0D,$0A
                      dc.b    'With this, you must decide how best to spend your gold,'
                      dc.b    $0D,$0A
                      dc.b    'and how much you would like to keep for yourself.',0
-potions_msg:         dc.b    'You walk into a nearby potion shop and decide how many potions you need: '
+potions_msg:         dc.b    'You walk into a nearby potion shop and decide how many potions you need. '
+                     dc.b    $0D,$0A
+                     dc.b    '"Each potion costs 100 gold, how many do ye want?":  ',0
 potions_error_max    dc.b    'Even with your cavalry team, you would not be able to hold that many potions.'
                      dc.b    $0D,$0A,0
 potions_error_min    dc.b    'You will need potions to go on this journey.'
                      dc.b    $0D,$0A,0
-potions_error_money  dc.b    'You do not have enough money.'
+error_money          dc.b    'You do not have enough money.'
                      dc.b    $0D,$0A,0
-potion_msg:     dc.b    'Number of potions : ',0
-weapons_msg:    dc.b    'Each quest need at least 2 Weapons'
-                dc.b    $0D,$0A
-                dc.b    'minimum requirement is 2 i.e. Sword x 1 and Spear x 1.'
-                dc.b    $0D,$0A
-                dc.b    'Enter # of weapons : ',0
-gameplay_msg:   dc.b    'Add Gameplay !',0
-update_msg:     dc.b    'Update Gameplay !',0
-draw_msg:       dc.b    'Draw Screen !',0
-hit_msg:        dc.b    'Strike!',0
-miss_msg:       dc.b    'Miss!',0
-loop_msg:       dc.b    '.',0
-replay_msg:     dc.b    'Enter 0 to Quit any other number to replay : ',0
-hud_msg:        dc.b    'Score : ',0
+                     
+potion_msg:          dc.b    'Number of potions : ',0
 
-health:     ds.w    1 Player's health
-score:      ds.w    1 reserve space for score
+weapon_msg:          dc.b    'Number of weapons : ',0
+
+gold_msg             dc.b    'Amount of gold: ',0
+
+weapons_msg:         dc.b    'You decide to buy some weapons for you and your cavalry.'
+                     dc.b    $0D,$0A
+                     dc.b    'Each fight will use at least 1 weapon and it`s 250 gold per weapon.'
+                     dc.b    $0D,$0A
+                     dc.b    'With this knowledge, you decide to buy: ',0 
+                 
+weapons_error_max    dc.b    'As you already have weapons, that would be too many.'
+                     dc.b    $0D,$0A,0
+                     
+weapons_error_min    dc.b    'You need more weapons than you already have.'
+                     dc.b    $0D,$0A,0
+                     
+gameplay_msg:        dc.b    'Add Gameplay !',0
+update_msg:          dc.b    'Update Gameplay !',0
+draw_msg:            dc.b    'Draw Screen !',0
+hit_msg:             dc.b    'Strike!',0
+miss_msg:            dc.b    'Miss!',0
+loop_msg:            dc.b    '.',0
+replay_msg:          dc.b    'Enter 0 to Quit any other number to replay : ',0
+hud_msg:             dc.b    'Score : ',0
+empty_msg            dc.b    '',$0D,$0A,0
+
+
 
     end start
+
+
 
 
 
