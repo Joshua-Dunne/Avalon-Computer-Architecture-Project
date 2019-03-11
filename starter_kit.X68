@@ -29,8 +29,8 @@ RED     EQU             $000000FF
 CYAN    EQU             $00FFFF00
 WHITE   EQU             $00FFFFFF
 FONT    EQU             $01090000
-health:     ds.w    100 Player's health
-score:      ds.w    1 reserve space for score
+health:     dc.w    100 Player's health
+score:      dc.w    0 reserve space for score
 gold:       dc.w    5000 gold player has (starts at 5000)
 potion_count:    dc.w    0 potions player has (starts at 0)
 weapon_count:    dc.w    5 number of weapons player has (starts at 5)
@@ -43,6 +43,7 @@ mine_loc    EQU 100    A location where a mine is found
 *Start of Game
 start:
 
+    LEA score,A3
     LEA gold,A4
     LEA potion_count,A5
     LEA weapon_count,A6
@@ -87,10 +88,10 @@ welcome:
 
     clr     D1
     
-    move.b  #4,D0           move literal 3 to D0
+    move.b  #4,D0           move literal 4 to D0
     trap    #15             trap and interpret value in D0 (get input from user)
     cmp     #exit,D1
-    beq     end         if SR Z register contains 1 beq => Branch Equals
+    beq     end             if SR Z register contains 1 beq => Branch Equals
     bsr     endl            branch to endl subroutine
     
     move.b  #11,d0      clear screen
@@ -209,17 +210,7 @@ potions:
     
     bgt potion_error_money if they dont have enough, tell them
     
-    move.b  D1, (A5) otherwise move the amount of potions they bought into number A5
-    
-    clr     D2 clear d2 in case anything else has used it
-    
-    move.w (A4),D3 temporarily move the amount of money they have into a data register
-    
-    cmp.w   D3,D2 compare the cost against the money the user has
-    bgt     weapon_error_money if they dont have enough, tell them
-    
-    clr     D3 we dont need the number in the register anymore if it goes through
-    
+    add.w  D1, (A5) otherwise move the amount of potions they bought into number A5
     
     sub.w   D2,(A4) take away the cost
     
@@ -235,15 +226,19 @@ potions:
     move.b  #14,D0
     trap    #15 put in a line break
     
-    move.l   #1200,D1     delay in 1/100th of seconds (2 seconds)
-    moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
-    trap     #15         trap and interpret value in D0
+    lea     potion_msg,A1
+    move.b  #14,D0
+    trap    #15
     
-    move.b  #11,d0      clear screen
-    move.w  #$ff00,d1
-    trap    #15 
+    move.w  (A5),D1
+    move.b  #3,D0
+    trap    #15 display the number of potions
     
-    move.l   #300,D1     delay in 1/100th of seconds (2 seconds)
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
+    move.l   #500,D1     delay in 1/100th of seconds (2 seconds)
     moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
     trap     #15         trap and interpret value in D0
 
@@ -280,6 +275,10 @@ potionsremain:
     move.b  #14,D0
     trap    #15
     bsr     decorate
+    
+    move.b  #4,D0
+    trap    #15 get input on how many weapons user wants
+    
     rts
 
 *-------------------------------------------------------
@@ -327,7 +326,7 @@ weapons:
     
     clr     D3 we dont need the number in the register anymore if it goes through
     
-    move.b  D1, (A6) otherwise move the amount of weapons they bought into number A6 
+    add.w  D1,(A6) otherwise move the amount of weapons they bought into number A6 
     
     sub.w   D2,(A4) take away the cost
     
@@ -343,7 +342,19 @@ weapons:
     move.b  #14,D0
     trap    #15 put in a line break
     
-    move.l   #300,D1     delay in 1/100th of seconds (2 seconds)
+    lea     weapon_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.w  (A6),D1
+    move.b  #3,D0
+    trap    #15 display the number of weapons
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
+    move.l   #500,D1     delay in 1/100th of seconds (2 seconds)
     moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
     trap     #15         trap and interpret value in D0
  
@@ -384,6 +395,10 @@ gameplay:
     move.b  #14,D0
     trap    #15
     bsr     decorate
+    
+    move.b  #4,D0
+    trap    #15 get input on how many weapons user wants
+    
     bsr     collision
     rts
 
@@ -398,10 +413,14 @@ hud:
     lea     hud_msg,A1
     move.b  #14,D0
     trap    #15
-    move.b  (A3),D1     retrieve the value A3 point to and move to D1
+    move.w  (A3),D1     retrieve the value A3 point to and move to D1
     move.b  #3,D0       move literal 3 to D0
     trap    #15         intrepret value in D0, which 3 which displays D1
     bsr     decorate
+    
+    move.b  #4,D0
+    trap    #15 wait for input to continue
+
     rts
 
 *-------------------------------------------------------
@@ -411,12 +430,20 @@ hud:
 collision:
     move.b  #mine_loc,D1
     cmp     #100,D1 is( x == 100)?
+    
+    move.b  #4,D0
+    trap    #15 get input on how many weapons user wants
+    
 	bne     collision_miss if x is not equal to 100, then not hit
 collision_hit:
     *hit
     lea     hit_msg,A1
     move    #14,D0
     trap    #15
+    
+    move.b  #4,D0
+    trap    #15 get input on how many weapons user wants
+    
     rts
     
 collision_miss:
@@ -424,6 +451,10 @@ collision_miss:
     lea     miss_msg,A1
     move    #14,D0
     trap    #15
+    
+    move.b  #4,D0
+    trap    #15 get input on how many weapons user wants
+    
     rts
 
 *-------------------------------------------------------
@@ -436,6 +467,10 @@ next:
     move.b  #14,D0
     trap    #15
 	sub     #1,D3   decrement loop counter
+	
+	move.b  #4,D0
+    trap    #15 get input on how many weapons user wants
+	
     bne     next    repeat until D0=0
 
 *-------------------------------------------------------
@@ -526,6 +561,8 @@ weapons_msg:         dc.b    'You decide to buy some weapons for you and your ca
                      dc.b    $0D,$0A
                      dc.b    'Each fight will use at least 1 weapon and it`s 250 gold per weapon.'
                      dc.b    $0D,$0A
+                     dc.b    'You already have 5 weapons, but more is always good.'
+                     dc.b    $0D,$0A
                      dc.b    'With this knowledge, you decide to buy: ',0 
                  
 weapons_error_max    dc.b    'As you already have weapons, that would be too many.'
@@ -547,6 +584,7 @@ empty_msg            dc.b    '',$0D,$0A,0
 
 
     end start
+
 
 
 
