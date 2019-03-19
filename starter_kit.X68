@@ -5,7 +5,7 @@
 * C00241588
 * Date(s): 11/02/19
 * Estimated Time Taken: 20 Hours
-* Actual Time Taken: ~4 Hour(s)
+* Actual Time Taken: ~6 Hour(s)
 * Known Bugs:
 *------------------------------------------------------
 
@@ -34,15 +34,17 @@ score:      dc.w    0 reserve space for score
 gold:       dc.w    5000 gold player has (starts at 5000)
 potion_count:    dc.w    0 potions player has (starts at 0)
 weapon_count:    dc.w    5 number of weapons player has (starts at 5)
-feed:       dc.w    0 amount of food for horse (starts at 0)
+distance_travelled: dc.w    0 how far the player has gone (1000 to finish journey)
 
 
 mine_loc    EQU 100    A location where a mine is found
+noir_loc    EQU 2000    Location of destination
 
 
 *Start of Game
 start:
 
+    LEA distance_travelled, A2
     LEA score,A3
     LEA gold,A4
     LEA potion_count,A5
@@ -68,8 +70,6 @@ end:
 *-------------------Welcome Subroutine------------------
 *-------------------------------------------------------
 welcome:
-    bsr     endl            branch to endl subroutine
-    
     move.l #RED,D1
     move.l #FONT,D2
     move.b  #21,D0
@@ -94,9 +94,7 @@ welcome:
     beq     end             if SR Z register contains 1 beq => Branch Equals
     bsr     endl            branch to endl subroutine
     
-    move.b  #11,d0      clear screen
-    move.w  #$ff00,d1
-    trap    #15  
+    bsr clear_screen
   
     
     move.l #WHITE,D1
@@ -110,7 +108,7 @@ welcome:
     move.b  #14,D0
     trap    #15
     
-    move.l   #600,D1     delay in 1/100th of seconds (2 seconds)
+    move.l   #800,D1     delay in 1/100th of seconds (2 seconds)
     moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
     trap     #15         trap and interpret value in D0
     
@@ -147,6 +145,7 @@ gameloop:
 update:
     bsr     endl            print a CR and LF
     bsr     decorate        decorate with dots using a loop
+    bsr     endl            print a CR and LF
     lea     update_msg,A1   
     move.b  #14,D0
     trap    #15
@@ -160,6 +159,7 @@ update:
 draw:
     bsr     endl
     bsr     decorate
+    bsr     endl            print a CR and LF
     lea     draw_msg,A1
     move.b  #14,D0
     trap    #15
@@ -174,6 +174,7 @@ draw:
 potions:
     bsr     endl
     bsr     decorate
+    bsr     endl            print a CR and LF
     lea     gold_msg,A1
     move.b  #14,D0
     trap    #15 display message saying how much gold user has
@@ -185,6 +186,11 @@ potions:
     lea     empty_msg,A1
     move.b  #14,D0
     trap    #15 put in a line break
+    
+    move.w (A4),D3 temporarily move the amount of money they have into a data register
+    
+    cmp     #250, D3 check if the player has enough gold to buy 1 weapon (which costs 250 gold)
+    blt     potion_error_money_none
     
     lea     potions_msg,A1
     move.b  #14,D0
@@ -204,15 +210,15 @@ potions:
     move.b  D1, D2 move the number of potions entered into data register 2
     mulu.w  #100, D2    multiply that number by 100 (to get the cost)
     
-    move.w (A4),D3 temporarily move the amount of money they have into a data register
-    
-    cmp.w   D3,D2 compare the cost against the potions the user has
+    cmp.w   D3,D2 compare the cost against the potions the user has given
     
     bgt potion_error_money if they dont have enough, tell them
     
     add.w  D1, (A5) otherwise move the amount of potions they bought into number A5
     
     sub.w   D2,(A4) take away the cost
+    
+    clr     D3           we dont need the number in the register anymore
     
     lea     gold_msg,A1
     move.b  #14,D0
@@ -263,6 +269,13 @@ potion_error_money:
     trap    #15
     bra     potions
     
+potion_error_money_none:
+    lea     error_money_none,A1
+    move.b  #14,D0
+    trap    #15
+    clr     D3   we dont need the number in the register anymore if it goes through
+    rts
+    
 
 *-------------------------------------------------------
 *--------------------Potions Inventory------------------
@@ -271,6 +284,7 @@ potion_error_money:
 potionsremain:
     bsr     endl
     bsr     decorate
+    bsr     endl            print a CR and LF
     lea     potion_msg,A1
     move.b  #14,D0
     trap    #15
@@ -286,9 +300,10 @@ potionsremain:
 * Number of weapons
 *-------------------------------------------------------   
 weapons:
-    bsr     endl
+    bsr     endl            print a CR and LF
     bsr     decorate
-    
+    bsr     endl
+ 
     lea     gold_msg,A1
     move.b  #14,D0
     trap    #15 display message saying how much gold user has
@@ -296,6 +311,11 @@ weapons:
     move.w  (A4),D1
     move.b  #3,D0
     trap    #15 display the number of gold
+    
+    move.w (A4),D3 temporarily move the amount of money they have into a data register
+    
+    cmp     #250, D3 check if the player has enough gold to buy 1 weapon (which costs 250 gold)
+    blt     weapon_error_money_none
     
     lea     empty_msg,A1
     move.b  #14,D0
@@ -318,8 +338,6 @@ weapons:
     
     move.b  D1, D2      move the number of weapons entered into data register 2
     mulu.w  #250, D2    multiply that number by 250 (to get the cost)
-    
-    move.w (A4),D3 temporarily move the amount of money they have into a data register
     
     cmp.w   D3,D2 compare the cost against the money the user has
     bgt     weapon_error_money if they dont have enough, tell them
@@ -358,9 +376,9 @@ weapons:
     moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
     trap     #15         trap and interpret value in D0
  
-    move.b  #11,d0      clear screen
-    move.w  #$ff00,d1
-    trap    #15 
+    bsr clear_screen
+    
+    clr     D3           we dont need the number in the register anymore if it goes through
  
     bsr     decorate
     rts
@@ -384,20 +402,34 @@ weapon_error_money:
     clr     D3 reset this number for use later
     clr     D2 reset this number for use later
     bra     weapons
+    
+weapon_error_money_none:
+    lea     error_money_none,A1
+    move.b  #14,D0
+    trap    #15
+    clr     D3 reset this number for use later
+    clr     D2 reset this number for use later
+    rts
 
 *-------------------------------------------------------
 *---Game Play (Quest Progress)--------------------------
 *------------------------------------------------------- 
 gameplay:
-    bsr     endl
+    bsr     endl            print a CR and LF
     bsr     decorate
+    bsr     endl
     lea     gameplay_msg,A1
     move.b  #14,D0
     trap    #15
+    
+    move.w  (A2),D1
+    move.b  #3,D0
+    trap    #15
+    
     bsr     decorate
     
     move.b  #4,D0
-    trap    #15 get input on how many weapons user wants
+    trap    #15 wait for input
     
     bsr     collision
     rts
@@ -407,9 +439,9 @@ gameplay:
 * Retrieves the score from memory location
 *-------------------------------------------------------   
 hud:
-
-    bsr     endl
+    bsr     endl            print a CR and LF
     bsr     decorate
+    bsr     endl
     lea     hud_msg,A1
     move.b  #14,D0
     trap    #15
@@ -417,24 +449,75 @@ hud:
     move.b  #3,D0       move literal 3 to D0
     trap    #15         intrepret value in D0, which 3 which displays D1
     bsr     decorate
+    lea     gold_msg,A1
+    move.b  #14,D0
+    trap    #15 display message saying how much gold user has
+    
+    move.w  (A4),D1
+    move.b  #3,D0
+    trap    #15 display the number of gold
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
+    bsr     decorate
+    
+    lea     potion_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.w  (A5),D1
+    move.b  #3,D0
+    trap    #15 display the number of potions
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
+    bsr     decorate
+
+    lea     weapon_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.w  (A6),D1
+    move.b  #3,D0
+    trap    #15 display the number of weapons
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
+    bsr     decorate
     
     move.b  #4,D0
     trap    #15 wait for input to continue
+    
+    bsr     clear_screen
+    bra     gameloop
 
     rts
 
 *-------------------------------------------------------
-*-----------------------Being Attacked------------------
-* This could be used for collision detection
+*-----------------------Event Collisions----------------
+* Used to see if the Player is at an event
 *-------------------------------------------------------
 collision:
-    move.b  #mine_loc,D1
-    cmp     #100,D1 is( x == 100)?
-    
-    move.b  #4,D0
-    trap    #15 get input on how many weapons user wants
-    
+    add.w   #1,  (A3)
+  
+	cmp     #40,(A2)
+	beq     potion_shop_event
+	
+	cmp     #80,(A2)
+	beq     weapon_shop_event
+	
+	move.b  #mine_loc,D1
+    cmp     (A2),D1 is( x == 100)?  
 	bne     collision_miss if x is not equal to 100, then not hit
+	beq     collision_hit  if x is equal to 100, then game is done
+	
+	
 collision_hit:
     *hit
     lea     hit_msg,A1
@@ -442,7 +525,9 @@ collision_hit:
     trap    #15
     
     move.b  #4,D0
-    trap    #15 get input on how many weapons user wants
+    trap    #15
+    
+    bra     replay
     
     rts
     
@@ -452,11 +537,51 @@ collision_miss:
     move    #14,D0
     trap    #15
     
+    add.w   #20, (A2)
+    
     move.b  #4,D0
     trap    #15 get input on how many weapons user wants
     
     rts
+    
+potion_shop_event:
+    lea     potion_event_start,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.b  #4,D0
+    trap    #15
+    
+    add.w   #20, (A2)
+    
+    cmp     #1, D1
+    beq     entered_potion_shop
+    
+    rts
+    
+weapon_shop_event:
+    lea     weapon_event_start,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.b  #4,D0
+    trap    #15
+    
+    add.w   #20, (A2)
+    
+    cmp     #1, D1
+    beq     entered_weapon_shop
+    
+    rts
 
+    
+entered_potion_shop:
+    bsr     potions
+    rts
+    
+entered_weapon_shop:
+    bsr     weapons
+    rts
 *-------------------------------------------------------
 *--------------------------Loop-------------------------
 *-------------------------------------------------------
@@ -477,6 +602,7 @@ next:
 *------------------Screen Decoration--------------------
 *-------------------------------------------------------
 decorate:
+    clr.w     D3
     move.b  #60, D3
     bsr     endl
 out:
@@ -541,6 +667,10 @@ intro_msg:           dc.b    $0D,$0A
                      dc.b    'With this, you must decide how best to spend your gold,'
                      dc.b    $0D,$0A
                      dc.b    'and how much you would like to keep for yourself.',0
+
+potion_event_start   dc.b    'Along your journey, you come across a Potion shop. Will you go in?',0
+weapon_event_start   dc.b    'Along your journey, you come across a Weapon shop. Will you go in?',0
+
 potions_msg:         dc.b    'You walk into a nearby potion shop and decide how many potions you need. '
                      dc.b    $0D,$0A
                      dc.b    '"Each potion costs 100 gold, how many do ye want?":  ',0
@@ -549,6 +679,10 @@ potions_error_max    dc.b    'Even with your cavalry team, you would not be able
 potions_error_min    dc.b    'You will need potions to go on this journey.'
                      dc.b    $0D,$0A,0
 error_money          dc.b    'You do not have enough money.'
+                     dc.b    $0D,$0A,0
+error_money_none     dc.b    'You do not have enough money to buy anything from the shop,'
+                     dc.b    $0D,$0A
+                     dc.b    'So you decide to leave.'
                      dc.b    $0D,$0A,0
                      
 potion_msg:          dc.b    'Number of potions : ',0
@@ -570,12 +704,13 @@ weapons_error_max    dc.b    'As you already have weapons, that would be too man
                      
 weapons_error_min    dc.b    'You need more weapons than you already have.'
                      dc.b    $0D,$0A,0
-                     
-gameplay_msg:        dc.b    'Add Gameplay !',0
+          
+gameplay_msg:        dc.b    'Distance Travelled: ',0
+
 update_msg:          dc.b    'Update Gameplay !',0
 draw_msg:            dc.b    'Draw Screen !',0
-hit_msg:             dc.b    'Strike!',0
-miss_msg:            dc.b    'Miss!',0
+hit_msg:             dc.b    'You made it!',0
+miss_msg:            dc.b    'Not much longer now.',0
 loop_msg:            dc.b    '.',0
 replay_msg:          dc.b    'Enter 0 to Quit any other number to replay : ',0
 hud_msg:             dc.b    'Score : ',0
@@ -584,6 +719,9 @@ empty_msg            dc.b    '',$0D,$0A,0
 
 
     end start
+
+
+
 
 
 
