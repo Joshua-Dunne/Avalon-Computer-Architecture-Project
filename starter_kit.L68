@@ -1,15 +1,15 @@
 0000100C Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 19/03/2019 16:23:35
+Created On: 23/03/2019 22:30:51
 
 00001000                             1          org $1000
 00001000                             2  
 00001000                             3  *-------------------------------------------------------
 00001000                             4  * Name: Joshua Dunne
 00001000                             5  * C00241588
-00001000                             6  * Date(s): 11/02/19
+00001000                             6  * Date(s): 21/01/19, 11/02/19, 18/02/19, 25/02/19, 11/03/19, 19/03/19, 23/03/19
 00001000                             7  * Estimated Time Taken: 20 Hours
-00001000                             8  * Actual Time Taken: ~6 Hour(s)
+00001000                             8  * Actual Time Taken: ~14 Hour(s)
 00001000                             9  * Known Bugs:
 00001000                            10  *------------------------------------------------------
 00001000                            11  
@@ -42,7 +42,7 @@ Created On: 19/03/2019 16:23:35
 0000100C                            38  
 0000100C                            39  
 0000100C  =00000064                 40  mine_loc    EQU 100    A location where a mine is found
-0000100C  =000007D0                 41  noir_loc    EQU 2000    Location of destination
+0000100C  =000003E8                 41  noir_loc    EQU 1000    Location of destination
 0000100C                            42  
 0000100C                            43  
 0000100C                            44  *Start of Game
@@ -81,7 +81,7 @@ Created On: 19/03/2019 16:23:35
 0000301C                            77      
 0000301C  4241                      78      clr     D1
 0000301E                            79      
-0000301E  43F9 00003503             80      lea     welcome_msg,A1  assign message to address register A1
+0000301E  43F9 00003747             80      lea     welcome_msg,A1  assign message to address register A1
 00003024  103C 000E                 81      move.b  #14,D0          move literal 14 to DO
 00003028  4E4F                      82      trap    #15             trap and interpret value in D0
 0000302A                            83      
@@ -96,9 +96,9 @@ Created On: 19/03/2019 16:23:35
 00003042  4E4F                      92      trap    #15             trap and interpret value in D0 (get input from user)
 00003044  B27C 0000                 93      cmp     #exit,D1
 00003048  67BC                      94      beq     end             if SR Z register contains 1 beq => Branch Equals
-0000304A  6100 049E                 95      bsr     endl            branch to endl subroutine
+0000304A  6100 06E2                 95      bsr     endl            branch to endl subroutine
 0000304E                            96      
-0000304E  6100 046C                 97      bsr clear_screen
+0000304E  6100 06B0                 97      bsr clear_screen
 00003052                            98    
 00003052                            99      
 00003052  223C 00FFFFFF            100      move.l #WHITE,D1
@@ -108,7 +108,7 @@ Created On: 19/03/2019 16:23:35
 00003064                           104      
 00003064  4241                     105      clr     D1
 00003066                           106      
-00003066  43F9 000035BD            107      lea     intro_msg,A1
+00003066  43F9 00003801            107      lea     intro_msg,A1
 0000306C  103C 000E                108      move.b  #14,D0
 00003070  4E4F                     109      trap    #15
 00003072                           110      
@@ -122,607 +122,862 @@ Created On: 19/03/2019 16:23:35
 0000307E                           118  *---------Gameplay Input Values Subroutine--------------
 0000307E                           119  *-------------------------------------------------------    
 0000307E                           120  input:
-0000307E  6100 006E                121      bsr     potions         branch to potion input subroutine
-00003082  6100 018A                122      bsr     weapons        branch to weaponss input subroutine
+0000307E  6100 0048                121      bsr     potions         branch to potion input subroutine
+00003082  6100 014C                122      bsr     weapons        branch to weaponss input subroutine
 00003086  4E75                     123      rts
 00003088                           124  
 00003088                           125  *-------------------------------------------------------
 00003088                           126  *----------------Gameloop (main loop)-------------------
 00003088                           127  *------------------------------------------------------- 
-00003088                           128  gameloop:
-00003088  6100 0028                129      bsr     update          branch to update game subroutine 
-0000308C  6100 042E                130      bsr     clear_screen    clears the screen         
-00003090  6100 003E                131      bsr     draw            branch to draw screen subroutine
-00003094  6100 0426                132      bsr     clear_screen    clears the screen
-00003098  6100 027C                133      bsr     gameplay        branch to gameplay subroutine
-0000309C  6100 041E                134      bsr     clear_screen    clears the screen
-000030A0  6100 02A4                135      bsr     hud             branch to display HUD subroutine
-000030A4  6100 0416                136      bsr     clear_screen    clears the screen
-000030A8  6100 041E                137      bsr     replay          branch to replay game subroutine
-000030AC  6100 040E                138      bsr     clear_screen    clears the screen
-000030B0  4E75                     139      rts                     return from gameloop: subroutine
-000030B2                           140  
-000030B2                           141  *-------------------------------------------------------
-000030B2                           142  *----------------Update Quest Progress------------------
-000030B2                           143  *  Complete Quest
-000030B2                           144  *------------------------------------------------------- 
-000030B2                           145  update:
-000030B2  6100 0436                146      bsr     endl            print a CR and LF
-000030B6  6100 03E4                147      bsr     decorate        decorate with dots using a loop
-000030BA  6100 042E                148      bsr     endl            print a CR and LF
-000030BE  43F9 00003A87            149      lea     update_msg,A1   
-000030C4  103C 000E                150      move.b  #14,D0
-000030C8  4E4F                     151      trap    #15
-000030CA  6100 03D0                152      bsr     decorate
-000030CE  4E75                     153      rts
-000030D0                           154  *-------------------------------------------------------
-000030D0                           155  *-----------------Draw Quest Updates--------------------
-000030D0                           156  * Draw the game progress information, status regarding
-000030D0                           157  * quest
-000030D0                           158  *------------------------------------------------------- 
-000030D0                           159  draw:
-000030D0  6100 0418                160      bsr     endl
-000030D4  6100 03C6                161      bsr     decorate
-000030D8  6100 0410                162      bsr     endl            print a CR and LF
-000030DC  43F9 00003A99            163      lea     draw_msg,A1
-000030E2  103C 000E                164      move.b  #14,D0
-000030E6  4E4F                     165      trap    #15
-000030E8  6100 03B2                166      bsr     decorate
-000030EC  4E75                     167      rts
-000030EE                           168  *-------------------------------------------------------
-000030EE                           169  *------------------------Potions------------------------
-000030EE                           170  * Input the ingredients for each potion. Ingredients costs 
-000030EE                           171  * money. For an advanced mark you need to manage this 
-000030EE                           172  * resource
-000030EE                           173  *------------------------------------------------------- 
-000030EE                           174  potions:
-000030EE  6100 03FA                175      bsr     endl
-000030F2  6100 03A8                176      bsr     decorate
-000030F6  6100 03F2                177      bsr     endl            print a CR and LF
-000030FA  43F9 0000391D            178      lea     gold_msg,A1
-00003100  103C 000E                179      move.b  #14,D0
-00003104  4E4F                     180      trap    #15 display message saying how much gold user has
-00003106                           181      
-00003106  3214                     182      move.w  (A4),D1
-00003108  103C 0003                183      move.b  #3,D0
-0000310C  4E4F                     184      trap    #15 display the number of gold
-0000310E                           185      
-0000310E  43F9 00003B02            186      lea     empty_msg,A1
-00003114  103C 000E                187      move.b  #14,D0
-00003118  4E4F                     188      trap    #15 put in a line break
-0000311A                           189      
-0000311A  3614                     190      move.w (A4),D3 temporarily move the amount of money they have into a data register
-0000311C                           191      
-0000311C  B67C 00FA                192      cmp     #250, D3 check if the player has enough gold to buy 1 weapon (which costs 250 gold)
-00003120  6D00 00B8                193      blt     potion_error_money_none
-00003124                           194      
-00003124  43F9 0000377C            195      lea     potions_msg,A1
-0000312A  103C 000E                196      move.b  #14,D0
-0000312E  4E4F                     197      trap    #15 display potion message
-00003130                           198      
-00003130  103C 0004                199      move.b  #4,D0
-00003134  4E4F                     200      trap    #15 get input on how many potions user wants
+00003088                           128  gameloop:        
+00003088  6100 0020                129      bsr     draw            branch to draw screen subroutine
+0000308C  6100 0672                130      bsr     clear_screen    clears the screen
+00003090  6100 0252                131      bsr     gameplay        branch to gameplay subroutine
+00003094  6100 066A                132      bsr     clear_screen    clears the screen
+00003098  6100 02CE                133      bsr     hud             branch to display HUD subroutine
+0000309C  6100 0662                134      bsr     clear_screen    clears the screen
+000030A0  6100 066A                135      bsr     replay          branch to replay game subroutine
+000030A4  6100 065A                136      bsr     clear_screen    clears the screen
+000030A8  4E75                     137      rts                     return from gameloop: subroutine
+000030AA                           138  *-------------------------------------------------------
+000030AA                           139  *-----------------Draw Quest Updates--------------------
+000030AA                           140  * Draw the game progress information, status regarding
+000030AA                           141  * quest
+000030AA                           142  *------------------------------------------------------- 
+000030AA                           143  draw:
+000030AA  6100 0682                144      bsr     endl
+000030AE  6100 0630                145      bsr     decorate
+000030B2  6100 067A                146      bsr     endl            print a CR and LF
+000030B6  43F9 00003ECA            147      lea     draw_msg,A1
+000030BC  103C 000E                148      move.b  #14,D0
+000030C0  4E4F                     149      trap    #15
+000030C2  6100 061C                150      bsr     decorate
+000030C6  4E75                     151      rts
+000030C8                           152  *-------------------------------------------------------
+000030C8                           153  *------------------------Potions------------------------
+000030C8                           154  * Buy some potions from a shop
+000030C8                           155  * Each costs 100 in-game gold
+000030C8                           156  *------------------------------------------------------- 
+000030C8                           157  potions:
+000030C8  6100 0664                158      bsr     endl
+000030CC  6100 0612                159      bsr     decorate
+000030D0  6100 065C                160      bsr     endl            print a CR and LF
+000030D4  43F9 00003BA1            161      lea     gold_msg,A1
+000030DA  103C 000E                162      move.b  #14,D0
+000030DE  4E4F                     163      trap    #15 display message saying how much gold user has
+000030E0                           164      
+000030E0  3238 1004                165      move.w  gold,D1
+000030E4  103C 0003                166      move.b  #3,D0
+000030E8  4E4F                     167      trap    #15 display the number of gold
+000030EA                           168      
+000030EA  43F9 00003F39            169      lea     empty_msg,A1
+000030F0  103C 000E                170      move.b  #14,D0
+000030F4  4E4F                     171      trap    #15 put in a line break
+000030F6                           172      
+000030F6  3638 1004                173      move.w  gold,D3 temporarily move the amount of money they have into a data register
+000030FA                           174      
+000030FA  B67C 00FA                175      cmp     #250, D3 check if the player has enough gold to buy 1 potion (which costs 100 gold)
+000030FE  6D00 00C0                176      blt     potion_error_money_none
+00003102                           177      
+00003102  43F9 00003A00            178      lea     potions_msg,A1
+00003108  103C 000E                179      move.b  #14,D0
+0000310C  4E4F                     180      trap    #15 display potion message
+0000310E                           181      
+0000310E  103C 0004                182      move.b  #4,D0
+00003112  4E4F                     183      trap    #15 get input on how many potions user wants
+00003114                           184      
+00003114  B27C 0001                185      cmp     #min_potions,D1
+00003118  6D00 0086                186      blt     potion_error_min compare less than minimum amount of potions allowed, branch if less
+0000311C                           187      
+0000311C  B27C 0014                188      cmp     #max_potions,D1
+00003120  6E00 006E                189      bgt     potion_error_max compare more than minimum amount of potions allowed, branch if more
+00003124                           190      
+00003124  4242                     191      clr     D2 clear d2 in case anything else has used it
+00003126                           192      
+00003126  1401                     193      move.b  D1, D2 move the number of potions entered into data register 2
+00003128  C4FC 0064                194      mulu.w  #100, D2    multiply that number by 100 (to get the cost)
+0000312C                           195      
+0000312C  B443                     196      cmp.w   D3,D2 compare the cost against the potions the user has given
+0000312E                           197      
+0000312E  6E00 0080                198      bgt potion_error_money if they dont have enough, tell them
+00003132                           199      
+00003132  D378 1006                200      add.w  D1, potion_count otherwise move the amount of potions they bought into number A5
 00003136                           201      
-00003136  B27C 0001                202      cmp     #min_potions,D1
-0000313A  6D00 007E                203      blt     potion_error_min compare less than minimum amount of potions allowed, branch if less
-0000313E                           204      
-0000313E  B27C 0014                205      cmp     #max_potions,D1
-00003142  6E00 0066                206      bgt     potion_error_max compare more than minimum amount of potions allowed, branch if more
-00003146                           207      
-00003146  4242                     208      clr     D2 clear d2 in case anything else has used it
+00003136  9578 1004                202      sub.w   D2,gold take away the cost
+0000313A                           203      
+0000313A  4243                     204      clr     D3           we dont need the number in the register anymore
+0000313C                           205      
+0000313C  43F9 00003BA1            206      lea     gold_msg,A1
+00003142  103C 000E                207      move.b  #14,D0
+00003146  4E4F                     208      trap    #15 display message saying how much gold user has
 00003148                           209      
-00003148  1401                     210      move.b  D1, D2 move the number of potions entered into data register 2
-0000314A  C4FC 0064                211      mulu.w  #100, D2    multiply that number by 100 (to get the cost)
-0000314E                           212      
-0000314E  B443                     213      cmp.w   D3,D2 compare the cost against the potions the user has given
-00003150                           214      
-00003150  6E00 0078                215      bgt potion_error_money if they dont have enough, tell them
-00003154                           216      
-00003154  D355                     217      add.w  D1, (A5) otherwise move the amount of potions they bought into number A5
-00003156                           218      
-00003156  9554                     219      sub.w   D2,(A4) take away the cost
-00003158                           220      
-00003158  4243                     221      clr     D3           we dont need the number in the register anymore
-0000315A                           222      
-0000315A  43F9 0000391D            223      lea     gold_msg,A1
-00003160  103C 000E                224      move.b  #14,D0
-00003164  4E4F                     225      trap    #15 display message saying how much gold user has
-00003166                           226      
-00003166  3214                     227      move.w  (A4),D1
-00003168  103C 0003                228      move.b  #3,D0
-0000316C  4E4F                     229      trap    #15 display the number of gold
-0000316E                           230      
-0000316E  43F9 00003B02            231      lea     empty_msg,A1
-00003174  103C 000E                232      move.b  #14,D0
-00003178  4E4F                     233      trap    #15 put in a line break
-0000317A                           234      
-0000317A  43F9 000038F3            235      lea     potion_msg,A1
-00003180  103C 000E                236      move.b  #14,D0
-00003184  4E4F                     237      trap    #15
-00003186                           238      
-00003186  3215                     239      move.w  (A5),D1
-00003188  103C 0003                240      move.b  #3,D0
-0000318C  4E4F                     241      trap    #15 display the number of potions
-0000318E                           242      
-0000318E  43F9 00003B02            243      lea     empty_msg,A1
-00003194  103C 000E                244      move.b  #14,D0
-00003198  4E4F                     245      trap    #15 put in a line break
-0000319A                           246      
-0000319A  223C 000001F4            247      move.l   #500,D1     delay in 1/100th of seconds (2 seconds)
-000031A0  7017                     248      moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
-000031A2  4E4F                     249      trap     #15         trap and interpret value in D0
-000031A4                           250  
-000031A4  6100 02F6                251      bsr     decorate
-000031A8  4E75                     252      rts
-000031AA                           253      
-000031AA                           254  potion_error_max:
-000031AA  43F9 000037FD            255      lea     potions_error_max,A1
-000031B0  103C 000E                256      move.b  #14,D0
-000031B4  4E4F                     257      trap    #15
-000031B6  6000 FF36                258      bra     potions
-000031BA                           259  
-000031BA                           260  potion_error_min:
-000031BA  43F9 0000384D            261      lea     potions_error_min,A1
-000031C0  103C 000E                262      move.b  #14,D0
-000031C4  4E4F                     263      trap    #15
-000031C6  6000 FF26                264      bra     potions
-000031CA                           265      
-000031CA                           266  potion_error_money:
-000031CA  43F9 0000387C            267      lea     error_money,A1
-000031D0  103C 000E                268      move.b  #14,D0
-000031D4  4E4F                     269      trap    #15
-000031D6  6000 FF16                270      bra     potions
-000031DA                           271      
-000031DA                           272  potion_error_money_none:
-000031DA  43F9 0000389C            273      lea     error_money_none,A1
-000031E0  103C 000E                274      move.b  #14,D0
-000031E4  4E4F                     275      trap    #15
-000031E6  4243                     276      clr     D3   we dont need the number in the register anymore if it goes through
-000031E8  4E75                     277      rts
-000031EA                           278      
-000031EA                           279  
-000031EA                           280  *-------------------------------------------------------
-000031EA                           281  *--------------------Potions Inventory------------------
-000031EA                           282  * Number of potions to be used in a Quest 
-000031EA                           283  *------------------------------------------------------- 
-000031EA                           284  potionsremain:
-000031EA  6100 02FE                285      bsr     endl
-000031EE  6100 02AC                286      bsr     decorate
-000031F2  6100 02F6                287      bsr     endl            print a CR and LF
-000031F6  43F9 000038F3            288      lea     potion_msg,A1
-000031FC  103C 000E                289      move.b  #14,D0
-00003200  4E4F                     290      trap    #15
-00003202  6100 0298                291      bsr     decorate
-00003206                           292      
-00003206  103C 0004                293      move.b  #4,D0
-0000320A  4E4F                     294      trap    #15 get input on how many weapons user wants
-0000320C                           295      
-0000320C  4E75                     296      rts
-0000320E                           297  
-0000320E                           298  *-------------------------------------------------------
-0000320E                           299  *-------------------------Weapons-----------------------
-0000320E                           300  * Number of weapons
-0000320E                           301  *-------------------------------------------------------   
-0000320E                           302  weapons:
-0000320E  6100 02DA                303      bsr     endl            print a CR and LF
-00003212  6100 0288                304      bsr     decorate
-00003216  6100 02D2                305      bsr     endl
-0000321A                           306   
-0000321A  43F9 0000391D            307      lea     gold_msg,A1
-00003220  103C 000E                308      move.b  #14,D0
-00003224  4E4F                     309      trap    #15 display message saying how much gold user has
-00003226                           310      
-00003226  3214                     311      move.w  (A4),D1
-00003228  103C 0003                312      move.b  #3,D0
-0000322C  4E4F                     313      trap    #15 display the number of gold
-0000322E                           314      
-0000322E  3614                     315      move.w (A4),D3 temporarily move the amount of money they have into a data register
-00003230                           316      
-00003230  B67C 00FA                317      cmp     #250, D3 check if the player has enough gold to buy 1 weapon (which costs 250 gold)
-00003234  6D00 00CE                318      blt     weapon_error_money_none
-00003238                           319      
-00003238  43F9 00003B02            320      lea     empty_msg,A1
-0000323E  103C 000E                321      move.b  #14,D0
-00003242  4E4F                     322      trap    #15 put in a line break
-00003244                           323      
-00003244  43F9 0000392E            324      lea     weapons_msg,A1
-0000324A  103C 000E                325      move.b  #14,D0
-0000324E  4E4F                     326      trap    #15 display weapon shop message
-00003250                           327      
-00003250  103C 0004                328      move.b  #4,D0
-00003254  4E4F                     329      trap    #15 get input on how many weapons user wants
-00003256                           330      
-00003256  B27C 0001                331      cmp     #min_weapons,D1
-0000325A  6D00 0084                332      blt     weapon_error_min compare less than minimum amount of weapons allowed, branch if less
-0000325E                           333      
-0000325E  B27C 000F                334      cmp     #max_weapons,D1
-00003262  6E00 006C                335      bgt     weapon_error_max compare more than maximum amount of weapons allowed, branch if more
-00003266                           336      
-00003266  4242                     337      clr     D2 clear d2 in case anything else has used it
-00003268                           338      
-00003268  1401                     339      move.b  D1, D2      move the number of weapons entered into data register 2
-0000326A  C4FC 00FA                340      mulu.w  #250, D2    multiply that number by 250 (to get the cost)
-0000326E                           341      
-0000326E  B443                     342      cmp.w   D3,D2 compare the cost against the money the user has
-00003270  6E00 007E                343      bgt     weapon_error_money if they dont have enough, tell them
-00003274                           344      
-00003274  4243                     345      clr     D3 we dont need the number in the register anymore if it goes through
-00003276                           346      
-00003276  D356                     347      add.w  D1,(A6) otherwise move the amount of weapons they bought into number A6 
-00003278                           348      
-00003278  9554                     349      sub.w   D2,(A4) take away the cost
-0000327A                           350      
-0000327A  43F9 0000391D            351      lea     gold_msg,A1
-00003280  103C 000E                352      move.b  #14,D0
-00003284  4E4F                     353      trap    #15 display message saying how much gold user has
-00003286                           354      
-00003286  3214                     355      move.w  (A4),D1
-00003288  103C 0003                356      move.b  #3,D0
-0000328C  4E4F                     357      trap    #15 display the number of gold
-0000328E                           358      
-0000328E  43F9 00003B02            359      lea     empty_msg,A1
-00003294  103C 000E                360      move.b  #14,D0
-00003298  4E4F                     361      trap    #15 put in a line break
-0000329A                           362      
-0000329A  43F9 00003908            363      lea     weapon_msg,A1
-000032A0  103C 000E                364      move.b  #14,D0
-000032A4  4E4F                     365      trap    #15
-000032A6                           366      
-000032A6  3216                     367      move.w  (A6),D1
-000032A8  103C 0003                368      move.b  #3,D0
-000032AC  4E4F                     369      trap    #15 display the number of weapons
-000032AE                           370      
-000032AE  43F9 00003B02            371      lea     empty_msg,A1
-000032B4  103C 000E                372      move.b  #14,D0
-000032B8  4E4F                     373      trap    #15 put in a line break
-000032BA                           374      
-000032BA  223C 000001F4            375      move.l   #500,D1     delay in 1/100th of seconds (2 seconds)
-000032C0  7017                     376      moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
-000032C2  4E4F                     377      trap     #15         trap and interpret value in D0
-000032C4                           378   
-000032C4  6100 01F6                379      bsr clear_screen
-000032C8                           380      
-000032C8  4243                     381      clr     D3           we dont need the number in the register anymore if it goes through
-000032CA                           382   
-000032CA  6100 01D0                383      bsr     decorate
-000032CE  4E75                     384      rts
-000032D0                           385      
-000032D0                           386  weapon_error_max:
-000032D0  43F9 00003A0C            387      lea     weapons_error_max,A1
-000032D6  103C 000E                388      move.b  #14,D0
-000032DA  4E4F                     389      trap    #15
-000032DC  6000 FF30                390      bra     weapons
-000032E0                           391  
-000032E0                           392  weapon_error_min:
-000032E0  43F9 00003A43            393      lea     weapons_error_min,A1
-000032E6  103C 000E                394      move.b  #14,D0
-000032EA  4E4F                     395      trap    #15
-000032EC  6000 FF20                396      bra     weapons
-000032F0                           397      
-000032F0                           398  weapon_error_money:
-000032F0  43F9 0000387C            399      lea     error_money,A1
-000032F6  103C 000E                400      move.b  #14,D0
-000032FA  4E4F                     401      trap    #15
-000032FC  4243                     402      clr     D3 reset this number for use later
-000032FE  4242                     403      clr     D2 reset this number for use later
-00003300  6000 FF0C                404      bra     weapons
-00003304                           405      
-00003304                           406  weapon_error_money_none:
-00003304  43F9 0000389C            407      lea     error_money_none,A1
-0000330A  103C 000E                408      move.b  #14,D0
-0000330E  4E4F                     409      trap    #15
-00003310  4243                     410      clr     D3 reset this number for use later
-00003312  4242                     411      clr     D2 reset this number for use later
-00003314  4E75                     412      rts
-00003316                           413  
-00003316                           414  *-------------------------------------------------------
-00003316                           415  *---Game Play (Quest Progress)--------------------------
-00003316                           416  *------------------------------------------------------- 
-00003316                           417  gameplay:
-00003316  6100 01D2                418      bsr     endl            print a CR and LF
-0000331A  6100 0180                419      bsr     decorate
-0000331E  6100 01CA                420      bsr     endl
-00003322  43F9 00003A72            421      lea     gameplay_msg,A1
-00003328  103C 000E                422      move.b  #14,D0
-0000332C  4E4F                     423      trap    #15
-0000332E                           424      
-0000332E  3212                     425      move.w  (A2),D1
-00003330  103C 0003                426      move.b  #3,D0
-00003334  4E4F                     427      trap    #15
-00003336                           428      
-00003336  6100 0164                429      bsr     decorate
-0000333A                           430      
-0000333A  103C 0004                431      move.b  #4,D0
-0000333E  4E4F                     432      trap    #15 wait for input
-00003340                           433      
-00003340  6100 00A4                434      bsr     collision
-00003344  4E75                     435      rts
-00003346                           436  
-00003346                           437  *-------------------------------------------------------
-00003346                           438  *-----------------Heads Up Display (Score)--------------
-00003346                           439  * Retrieves the score from memory location
-00003346                           440  *-------------------------------------------------------   
-00003346                           441  hud:
-00003346  6100 01A2                442      bsr     endl            print a CR and LF
-0000334A  6100 0150                443      bsr     decorate
-0000334E  6100 019A                444      bsr     endl
-00003352  43F9 00003AF9            445      lea     hud_msg,A1
-00003358  103C 000E                446      move.b  #14,D0
-0000335C  4E4F                     447      trap    #15
-0000335E  3213                     448      move.w  (A3),D1     retrieve the value A3 point to and move to D1
-00003360  103C 0003                449      move.b  #3,D0       move literal 3 to D0
-00003364  4E4F                     450      trap    #15         intrepret value in D0, which 3 which displays D1
-00003366  6100 0134                451      bsr     decorate
-0000336A  43F9 0000391D            452      lea     gold_msg,A1
-00003370  103C 000E                453      move.b  #14,D0
-00003374  4E4F                     454      trap    #15 display message saying how much gold user has
-00003376                           455      
-00003376  3214                     456      move.w  (A4),D1
-00003378  103C 0003                457      move.b  #3,D0
-0000337C  4E4F                     458      trap    #15 display the number of gold
-0000337E                           459      
-0000337E  43F9 00003B02            460      lea     empty_msg,A1
-00003384  103C 000E                461      move.b  #14,D0
-00003388  4E4F                     462      trap    #15 put in a line break
-0000338A                           463      
-0000338A  6100 0110                464      bsr     decorate
-0000338E                           465      
-0000338E  43F9 000038F3            466      lea     potion_msg,A1
-00003394  103C 000E                467      move.b  #14,D0
-00003398  4E4F                     468      trap    #15
-0000339A                           469      
-0000339A  3215                     470      move.w  (A5),D1
-0000339C  103C 0003                471      move.b  #3,D0
-000033A0  4E4F                     472      trap    #15 display the number of potions
-000033A2                           473      
-000033A2  43F9 00003B02            474      lea     empty_msg,A1
-000033A8  103C 000E                475      move.b  #14,D0
-000033AC  4E4F                     476      trap    #15 put in a line break
-000033AE                           477      
-000033AE  6100 00EC                478      bsr     decorate
-000033B2                           479  
-000033B2  43F9 00003908            480      lea     weapon_msg,A1
-000033B8  103C 000E                481      move.b  #14,D0
-000033BC  4E4F                     482      trap    #15
-000033BE                           483      
-000033BE  3216                     484      move.w  (A6),D1
-000033C0  103C 0003                485      move.b  #3,D0
-000033C4  4E4F                     486      trap    #15 display the number of weapons
-000033C6                           487      
-000033C6  43F9 00003B02            488      lea     empty_msg,A1
-000033CC  103C 000E                489      move.b  #14,D0
-000033D0  4E4F                     490      trap    #15 put in a line break
-000033D2                           491      
-000033D2  6100 00C8                492      bsr     decorate
-000033D6                           493      
-000033D6  103C 0004                494      move.b  #4,D0
-000033DA  4E4F                     495      trap    #15 wait for input to continue
-000033DC                           496      
-000033DC  6100 00DE                497      bsr     clear_screen
-000033E0  6000 FCA6                498      bra     gameloop
-000033E4                           499  
-000033E4  4E75                     500      rts
-000033E6                           501  
-000033E6                           502  *-------------------------------------------------------
-000033E6                           503  *-----------------------Event Collisions----------------
-000033E6                           504  * Used to see if the Player is at an event
-000033E6                           505  *-------------------------------------------------------
-000033E6                           506  collision:
-000033E6  5253                     507      add.w   #1,  (A3)
-000033E8                           508    
-000033E8  0C52 0028                509      cmp     #40,(A2)
-000033EC  6700 0048                510      beq     potion_shop_event
-000033F0                           511      
-000033F0  0C52 0050                512      cmp     #80,(A2)
-000033F4  6700 0060                513      beq     weapon_shop_event
-000033F8                           514      
-000033F8  123C 0064                515      move.b  #mine_loc,D1
-000033FC  B252                     516      cmp     (A2),D1 is( x == 100)?  
-000033FE  6600 001E                517      bne     collision_miss if x is not equal to 100, then not hit
-00003402  6700 0002                518      beq     collision_hit  if x is equal to 100, then game is done
-00003406                           519      
-00003406                           520      
-00003406                           521  collision_hit:
-00003406                           522      *hit
-00003406  43F9 00003AA7            523      lea     hit_msg,A1
-0000340C  303C 000E                524      move    #14,D0
-00003410  4E4F                     525      trap    #15
-00003412                           526      
-00003412  103C 0004                527      move.b  #4,D0
-00003416  4E4F                     528      trap    #15
-00003418                           529      
-00003418  6000 00AE                530      bra     replay
-0000341C                           531      
-0000341C  4E75                     532      rts
-0000341E                           533      
-0000341E                           534  collision_miss:
-0000341E                           535      *miss
-0000341E  43F9 00003AB4            536      lea     miss_msg,A1
-00003424  303C 000E                537      move    #14,D0
-00003428  4E4F                     538      trap    #15
-0000342A                           539      
-0000342A  0652 0014                540      add.w   #20, (A2)
-0000342E                           541      
-0000342E  103C 0004                542      move.b  #4,D0
-00003432  4E4F                     543      trap    #15 get input on how many weapons user wants
-00003434                           544      
-00003434  4E75                     545      rts
-00003436                           546      
-00003436                           547  potion_shop_event:
-00003436  43F9 000036F6            548      lea     potion_event_start,A1
-0000343C  103C 000E                549      move.b  #14,D0
-00003440  4E4F                     550      trap    #15
-00003442                           551      
-00003442  103C 0004                552      move.b  #4,D0
-00003446  4E4F                     553      trap    #15
-00003448                           554      
-00003448  0652 0014                555      add.w   #20, (A2)
-0000344C                           556      
-0000344C  B27C 0001                557      cmp     #1, D1
-00003450  6700 0024                558      beq     entered_potion_shop
-00003454                           559      
-00003454  4E75                     560      rts
-00003456                           561      
-00003456                           562  weapon_shop_event:
-00003456  43F9 00003739            563      lea     weapon_event_start,A1
-0000345C  103C 000E                564      move.b  #14,D0
-00003460  4E4F                     565      trap    #15
-00003462                           566      
-00003462  103C 0004                567      move.b  #4,D0
-00003466  4E4F                     568      trap    #15
-00003468                           569      
-00003468  0652 0014                570      add.w   #20, (A2)
-0000346C                           571      
-0000346C  B27C 0001                572      cmp     #1, D1
-00003470  6700 000A                573      beq     entered_weapon_shop
-00003474                           574      
-00003474  4E75                     575      rts
-00003476                           576  
-00003476                           577      
-00003476                           578  entered_potion_shop:
-00003476  6100 FC76                579      bsr     potions
-0000347A  4E75                     580      rts
-0000347C                           581      
-0000347C                           582  entered_weapon_shop:
-0000347C  6100 FD90                583      bsr     weapons
-00003480  4E75                     584      rts
-00003482                           585  *-------------------------------------------------------
-00003482                           586  *--------------------------Loop-------------------------
-00003482                           587  *-------------------------------------------------------
-00003482                           588  loop:
-00003482  163C 0005                589      move.b  #5, D3 loop counter D3=5
-00003486                           590  next:
-00003486  43F9 00003AC9            591      lea     loop_msg,A1
-0000348C  103C 000E                592      move.b  #14,D0
-00003490  4E4F                     593      trap    #15
-00003492  5343                     594      sub     #1,D3   decrement loop counter
-00003494                           595      
-00003494  103C 0004                596      move.b  #4,D0
-00003498  4E4F                     597      trap    #15 get input on how many weapons user wants
-0000349A                           598      
-0000349A  66EA                     599      bne     next    repeat until D0=0
-0000349C                           600  
-0000349C                           601  *-------------------------------------------------------
-0000349C                           602  *------------------Screen Decoration--------------------
-0000349C                           603  *-------------------------------------------------------
-0000349C                           604  decorate:
-0000349C  4243                     605      clr.w     D3
-0000349E  163C 003C                606      move.b  #60, D3
-000034A2  6100 0046                607      bsr     endl
-000034A6                           608  out:
-000034A6  43F9 00003AC9            609      lea     loop_msg,A1
-000034AC  103C 000E                610      move.b  #14,D0
-000034B0  4E4F                     611      trap    #15
-000034B2  5343                     612      sub     #1,D3   decrement loop counter
-000034B4  66F0                     613      bne     out     repeat until D0=0
-000034B6  6100 0032                614      bsr     endl
-000034BA  4E75                     615      rts
-000034BC                           616      
-000034BC                           617  clear_screen: 
-000034BC  103C 000B                618      move.b  #11,D0      clear screen
-000034C0  323C FF00                619      move.w  #$ff00,D1
-000034C4  4E4F                     620      trap    #15
-000034C6  4E75                     621      rts
-000034C8                           622  *-------------------------------------------------------
-000034C8                           623  *------------------------Replay-------------------------
-000034C8                           624  *-------------------------------------------------------
-000034C8                           625  replay:
-000034C8  6100 0020                626      bsr     endl
-000034CC  43F9 00003ACB            627      lea     replay_msg,A1
-000034D2  103C 000E                628      move.b  #14,D0
-000034D6  4E4F                     629      trap    #15
-000034D8                           630      
-000034D8  103C 0004                631      move.b  #4,D0
-000034DC  4E4F                     632      trap    #15
-000034DE                           633  
-000034DE  B27C 0000                634      cmp     #exit,D1
-000034E2  6700 FB22                635      beq     end         if SR Z register contains 1 beq => Branch Equals
-000034E6  6100 FBA0                636      bsr     gameloop
-000034EA                           637  
-000034EA                           638  endl:
-000034EA  48E7 8040                639      movem.l D0/A1,-(A7)
-000034EE  303C 000E                640      move    #14,D0
-000034F2  43F9 00003500            641      lea     crlf,A1
-000034F8  4E4F                     642      trap    #15
-000034FA  4CDF 0201                643      movem.l (A7)+,D0/A1
-000034FE  4E75                     644      rts
-00003500                           645      
-00003500                           646  *-------------------------------------------------------
-00003500                           647  *-------------------Data Delarations--------------------
-00003500                           648  *-------------------------------------------------------
-00003500                           649  
-00003500= 0D 0A 00                 650  crlf:                dc.b    $0D,$0A,0
-00003503= 2A 2A 2A 2A 2A 2A ...    651  welcome_msg:         dc.b    '************************************************************'
-0000353F= 0D 0A                    652                       dc.b    $0D,$0A
-00003541= 41 76 61 6C 6F 6E ...    653                       dc.b    'Avalon: The Legend Lives'
-00003559= 0D 0A                    654                       dc.b    $0D,$0A
-0000355B= 2A 2A 2A 2A 2A 2A ...    655                       dc.b    '************************************************************'
-00003597= 0D 0A                    656                       dc.b    $0D,$0A
-00003599= 45 6E 74 65 72 20 ...    657                       dc.b    'Enter 1 to Start, Enter 0 to Quit: ',0
-000035BD= 0D 0A                    658  intro_msg:           dc.b    $0D,$0A
-000035BF= 59 6F 75 20 61 6E ...    659                       dc.b    'You and your cavalry are given a quest to deliver '
-000035F1= 0D 0A                    660                       dc.b    $0D,$0A
-000035F3= 61 6E 20 61 6E 63 ...    661                       dc.b    'an ancient relic to the Kingdom of Noirheed.'
-0000361F= 0D 0A                    662                       dc.b    $0D,$0A
-00003621= 42 65 66 6F 72 65 ...    663                       dc.b    'Before you leave, the King who bestowed you this quest'
-00003657= 0D 0A                    664                       dc.b    $0D,$0A
-00003659= 67 69 76 65 73 20 ...    665                       dc.b    'gives you half the payment upfront -- 5000 gold.'
-00003689= 0D 0A                    666                       dc.b    $0D,$0A
-0000368B= 57 69 74 68 20 74 ...    667                       dc.b    'With this, you must decide how best to spend your gold,'
-000036C2= 0D 0A                    668                       dc.b    $0D,$0A
-000036C4= 61 6E 64 20 68 6F ...    669                       dc.b    'and how much you would like to keep for yourself.',0
-000036F6                           670  
-000036F6= 41 6C 6F 6E 67 20 ...    671  potion_event_start   dc.b    'Along your journey, you come across a Potion shop. Will you go in?',0
-00003739= 41 6C 6F 6E 67 20 ...    672  weapon_event_start   dc.b    'Along your journey, you come across a Weapon shop. Will you go in?',0
-0000377C                           673  
-0000377C= 59 6F 75 20 77 61 ...    674  potions_msg:         dc.b    'You walk into a nearby potion shop and decide how many potions you need. '
-000037C5= 0D 0A                    675                       dc.b    $0D,$0A
-000037C7= 22 45 61 63 68 20 ...    676                       dc.b    '"Each potion costs 100 gold, how many do ye want?":  ',0
-000037FD= 45 76 65 6E 20 77 ...    677  potions_error_max    dc.b    'Even with your cavalry team, you would not be able to hold that many potions.'
-0000384A= 0D 0A 00                 678                       dc.b    $0D,$0A,0
-0000384D= 59 6F 75 20 77 69 ...    679  potions_error_min    dc.b    'You will need potions to go on this journey.'
-00003879= 0D 0A 00                 680                       dc.b    $0D,$0A,0
-0000387C= 59 6F 75 20 64 6F ...    681  error_money          dc.b    'You do not have enough money.'
-00003899= 0D 0A 00                 682                       dc.b    $0D,$0A,0
-0000389C= 59 6F 75 20 64 6F ...    683  error_money_none     dc.b    'You do not have enough money to buy anything from the shop,'
-000038D7= 0D 0A                    684                       dc.b    $0D,$0A
-000038D9= 53 6F 20 79 6F 75 ...    685                       dc.b    'So you decide to leave.'
-000038F0= 0D 0A 00                 686                       dc.b    $0D,$0A,0
-000038F3                           687                       
-000038F3= 4E 75 6D 62 65 72 ...    688  potion_msg:          dc.b    'Number of potions : ',0
-00003908                           689  
-00003908= 4E 75 6D 62 65 72 ...    690  weapon_msg:          dc.b    'Number of weapons : ',0
-0000391D                           691  
-0000391D= 41 6D 6F 75 6E 74 ...    692  gold_msg             dc.b    'Amount of gold: ',0
-0000392E                           693  
-0000392E= 59 6F 75 20 64 65 ...    694  weapons_msg:         dc.b    'You decide to buy some weapons for you and your cavalry.'
-00003966= 0D 0A                    695                       dc.b    $0D,$0A
-00003968= 45 61 63 68 20 66 ...    696                       dc.b    'Each fight will use at least 1 weapon and it`s 250 gold per weapon.'
-000039AB= 0D 0A                    697                       dc.b    $0D,$0A
-000039AD= 59 6F 75 20 61 6C ...    698                       dc.b    'You already have 5 weapons, but more is always good.'
-000039E1= 0D 0A                    699                       dc.b    $0D,$0A
-000039E3= 57 69 74 68 20 74 ...    700                       dc.b    'With this knowledge, you decide to buy: ',0 
-00003A0C                           701                   
-00003A0C= 41 73 20 79 6F 75 ...    702  weapons_error_max    dc.b    'As you already have weapons, that would be too many.'
-00003A40= 0D 0A 00                 703                       dc.b    $0D,$0A,0
-00003A43                           704                       
-00003A43= 59 6F 75 20 6E 65 ...    705  weapons_error_min    dc.b    'You need more weapons than you already have.'
-00003A6F= 0D 0A 00                 706                       dc.b    $0D,$0A,0
-00003A72                           707            
-00003A72= 44 69 73 74 61 6E ...    708  gameplay_msg:        dc.b    'Distance Travelled: ',0
-00003A87                           709  
-00003A87= 55 70 64 61 74 65 ...    710  update_msg:          dc.b    'Update Gameplay !',0
-00003A99= 44 72 61 77 20 53 ...    711  draw_msg:            dc.b    'Draw Screen !',0
-00003AA7= 59 6F 75 20 6D 61 ...    712  hit_msg:             dc.b    'You made it!',0
-00003AB4= 4E 6F 74 20 6D 75 ...    713  miss_msg:            dc.b    'Not much longer now.',0
-00003AC9= 2E 00                    714  loop_msg:            dc.b    '.',0
-00003ACB= 45 6E 74 65 72 20 ...    715  replay_msg:          dc.b    'Enter 0 to Quit any other number to replay : ',0
-00003AF9= 53 63 6F 72 65 20 ...    716  hud_msg:             dc.b    'Score : ',0
-00003B02= 0D 0A 00                 717  empty_msg            dc.b    '',$0D,$0A,0
-00003B05                           718  
-00003B05                           719  
-00003B05                           720  
-00003B05                           721      end start
+00003148  3238 1004                210      move.w  gold,D1
+0000314C  103C 0003                211      move.b  #3,D0
+00003150  4E4F                     212      trap    #15 display the number of gold
+00003152                           213      
+00003152  43F9 00003F39            214      lea     empty_msg,A1
+00003158  103C 000E                215      move.b  #14,D0
+0000315C  4E4F                     216      trap    #15 put in a line break
+0000315E                           217      
+0000315E  43F9 00003B77            218      lea     potion_msg,A1
+00003164  103C 000E                219      move.b  #14,D0
+00003168  4E4F                     220      trap    #15
+0000316A                           221      
+0000316A  3238 1006                222      move.w  potion_count,D1
+0000316E  103C 0003                223      move.b  #3,D0
+00003172  4E4F                     224      trap    #15 display the number of potions
+00003174                           225      
+00003174  43F9 00003F39            226      lea     empty_msg,A1
+0000317A  103C 000E                227      move.b  #14,D0
+0000317E  4E4F                     228      trap    #15 put in a line break
+00003180                           229      
+00003180  223C 000001F4            230      move.l   #500,D1     delay in 1/100th of seconds (2 seconds)
+00003186  7017                     231      moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
+00003188  4E4F                     232      trap     #15         trap and interpret value in D0
+0000318A                           233  
+0000318A  6100 0554                234      bsr     decorate
+0000318E  4E75                     235      rts
+00003190                           236      
+00003190                           237  potion_error_max:
+00003190  43F9 00003A81            238      lea     potions_error_max,A1
+00003196  103C 000E                239      move.b  #14,D0
+0000319A  4E4F                     240      trap    #15
+0000319C  6000 FF2A                241      bra     potions say they entered too many potions, then go back and let them enter again
+000031A0                           242  
+000031A0                           243  potion_error_min:
+000031A0  43F9 00003AD1            244      lea     potions_error_min,A1
+000031A6  103C 000E                245      move.b  #14,D0
+000031AA  4E4F                     246      trap    #15
+000031AC  6000 FF1A                247      bra     potions say they entered too little potions, then go back and let them enter again
+000031B0                           248      
+000031B0                           249  potion_error_money:
+000031B0  43F9 00003B00            250      lea     error_money,A1
+000031B6  103C 000E                251      move.b  #14,D0
+000031BA  4E4F                     252      trap    #15
+000031BC  6000 FF0A                253      bra     potions say they dont have enough money to purchase the amount of potions they entered
+000031C0                           254      
+000031C0                           255  potion_error_money_none:
+000031C0  43F9 00003B20            256      lea     error_money_none,A1
+000031C6  103C 000E                257      move.b  #14,D0
+000031CA  4E4F                     258      trap    #15 say they don't have enough money to enter the shop
+000031CC  4243                     259      clr     D3 
+000031CE  4E75                     260      rts
+000031D0                           261      
+000031D0                           262  *-------------------------------------------------------
+000031D0                           263  *-------------------------Weapons-----------------------
+000031D0                           264  * Number of weapons
+000031D0                           265  *-------------------------------------------------------   
+000031D0                           266  weapons:
+000031D0  6100 055C                267      bsr     endl            print a CR and LF
+000031D4  6100 050A                268      bsr     decorate
+000031D8  6100 0554                269      bsr     endl
+000031DC                           270   
+000031DC  43F9 00003BA1            271      lea     gold_msg,A1
+000031E2  103C 000E                272      move.b  #14,D0
+000031E6  4E4F                     273      trap    #15 display message saying how much gold user has
+000031E8                           274      
+000031E8  3238 1004                275      move.w  gold,D1
+000031EC  103C 0003                276      move.b  #3,D0
+000031F0  4E4F                     277      trap    #15 display the number of gold
+000031F2                           278      
+000031F2  3638 1004                279      move.w gold,D3 temporarily move the amount of money they have into a data register
+000031F6                           280      
+000031F6  B67C 00FA                281      cmp     #250, D3 check if the player has enough gold to buy 1 weapon (which costs 250 gold)
+000031FA  6D00 00D6                282      blt     weapon_error_money_none
+000031FE                           283      
+000031FE  43F9 00003F39            284      lea     empty_msg,A1
+00003204  103C 000E                285      move.b  #14,D0
+00003208  4E4F                     286      trap    #15 put in a line break
+0000320A                           287      
+0000320A  43F9 00003C33            288      lea     weapons_msg,A1
+00003210  103C 000E                289      move.b  #14,D0
+00003214  4E4F                     290      trap    #15 display weapon shop message
+00003216                           291      
+00003216  103C 0004                292      move.b  #4,D0
+0000321A  4E4F                     293      trap    #15 get input on how many weapons user wants
+0000321C                           294      
+0000321C  B27C 0001                295      cmp     #min_weapons,D1
+00003220  6D00 008C                296      blt     weapon_error_min compare less than minimum amount of weapons allowed, branch if less
+00003224                           297      
+00003224  B27C 000F                298      cmp     #max_weapons,D1
+00003228  6E00 0074                299      bgt     weapon_error_max compare more than maximum amount of weapons allowed, branch if more
+0000322C                           300      
+0000322C  4242                     301      clr     D2 clear d2 in case anything else has used it
+0000322E                           302      
+0000322E  1401                     303      move.b  D1, D2      move the number of weapons entered into data register 2
+00003230  C4FC 00FA                304      mulu.w  #250, D2    multiply that number by 250 (to get the cost)
+00003234                           305      
+00003234  B443                     306      cmp.w   D3,D2 compare the cost against the money the user has
+00003236  6E00 0086                307      bgt     weapon_error_money if they dont have enough, tell them
+0000323A                           308      
+0000323A  4243                     309      clr     D3 we dont need the number in the register anymore if it goes through
+0000323C                           310      
+0000323C  D378 1008                311      add.w  D1,weapon_count otherwise move the amount of weapons they bought into number A6 
+00003240                           312      
+00003240  9578 1004                313      sub.w   D2, gold take away the cost
+00003244                           314      
+00003244  43F9 00003BA1            315      lea     gold_msg,A1
+0000324A  103C 000E                316      move.b  #14,D0
+0000324E  4E4F                     317      trap    #15 display message saying how much gold user has
+00003250                           318      
+00003250  3238 1004                319      move.w  gold,D1
+00003254  103C 0003                320      move.b  #3,D0
+00003258  4E4F                     321      trap    #15 display the number of gold
+0000325A                           322      
+0000325A  43F9 00003F39            323      lea     empty_msg,A1
+00003260  103C 000E                324      move.b  #14,D0
+00003264  4E4F                     325      trap    #15 put in a line break
+00003266                           326      
+00003266  43F9 00003B8C            327      lea     weapon_msg,A1
+0000326C  103C 000E                328      move.b  #14,D0
+00003270  4E4F                     329      trap    #15
+00003272                           330      
+00003272  3238 1008                331      move.w  weapon_count,D1
+00003276  103C 0003                332      move.b  #3,D0
+0000327A  4E4F                     333      trap    #15 display the number of weapons
+0000327C                           334      
+0000327C  43F9 00003F39            335      lea     empty_msg,A1
+00003282  103C 000E                336      move.b  #14,D0
+00003286  4E4F                     337      trap    #15 put in a line break
+00003288                           338      
+00003288  223C 000001F4            339      move.l   #500,D1     delay in 1/100th of seconds (2 seconds)
+0000328E  7017                     340      moveq    #23,D0      23 -> Wait 1/100th of a second of the value in D1 
+00003290  4E4F                     341      trap     #15         trap and interpret value in D0
+00003292                           342   
+00003292  6100 046C                343      bsr clear_screen
+00003296                           344      
+00003296  4243                     345      clr     D3           we dont need the number in the register anymore if it goes through
+00003298                           346   
+00003298  6100 0446                347      bsr     decorate
+0000329C  4E75                     348      rts
+0000329E                           349      
+0000329E                           350  weapon_error_max:
+0000329E  43F9 00003D11            351      lea     weapons_error_max,A1
+000032A4  103C 000E                352      move.b  #14,D0
+000032A8  4E4F                     353      trap    #15
+000032AA  6000 FF24                354      bra     weapons
+000032AE                           355  
+000032AE                           356  weapon_error_min:
+000032AE  43F9 00003D48            357      lea     weapons_error_min,A1
+000032B4  103C 000E                358      move.b  #14,D0
+000032B8  4E4F                     359      trap    #15
+000032BA  6000 FF14                360      bra     weapons
+000032BE                           361      
+000032BE                           362  weapon_error_money:
+000032BE  43F9 00003B00            363      lea     error_money,A1
+000032C4  103C 000E                364      move.b  #14,D0
+000032C8  4E4F                     365      trap    #15
+000032CA  4243                     366      clr     D3 reset this number for use later
+000032CC  4242                     367      clr     D2 reset this number for use later
+000032CE  6000 FF00                368      bra     weapons
+000032D2                           369      
+000032D2                           370  weapon_error_money_none:
+000032D2  43F9 00003B20            371      lea     error_money_none,A1
+000032D8  103C 000E                372      move.b  #14,D0
+000032DC  4E4F                     373      trap    #15
+000032DE  4243                     374      clr     D3 reset this number for use later
+000032E0  4242                     375      clr     D2 reset this number for use later
+000032E2  4E75                     376      rts
+000032E4                           377  
+000032E4                           378  *-------------------------------------------------------
+000032E4                           379  *---Game Play (Quest Progress)--------------------------
+000032E4                           380  *------------------------------------------------------- 
+000032E4                           381  gameplay:
+000032E4  6100 0448                382      bsr     endl            print a CR and LF
+000032E8  6100 03F6                383      bsr     decorate
+000032EC  6100 0440                384      bsr     endl
+000032F0  43F9 00003EA3            385      lea     gameplay_msg,A1
+000032F6  103C 000E                386      move.b  #14,D0
+000032FA  4E4F                     387      trap    #15
+000032FC                           388      
+000032FC  3238 100A                389      move.w  distance_travelled,D1
+00003300  103C 0003                390      move.b  #3,D0
+00003304  4E4F                     391      trap    #15 show how far the player has gone
+00003306                           392      
+00003306  6100 03D8                393      bsr     decorate
+0000330A                           394      
+0000330A  103C 0004                395      move.b  #4,D0
+0000330E  4E4F                     396      trap    #15 wait for input
+00003310                           397      
+00003310  0C78 0064 1000           398      cmp     #100, health
+00003316  6D00 0006                399      blt     ask_heal
+0000331A  6C00 0046                400      bge     continue_on
+0000331E                           401  
+0000331E                           402  ask_heal:
+0000331E                           403  
+0000331E  43F9 00003BC3            404      lea     heal_ask_msg,A1
+00003324  103C 000E                405      move.b  #14,D0
+00003328  4E4F                     406      trap    #15
+0000332A                           407      
+0000332A  103C 0004                408      move.b  #4,D0
+0000332E  4E4F                     409      trap    #15 check if user wants to heal
+00003330                           410      
+00003330  B27C 0001                411      cmp     #1, D1 
+00003334  6600 002C                412      bne     continue_on if they put in anything else, just continue
+00003338                           413  * if they put in one, heal them
+00003338                           414  
+00003338  0678 0032 1000           415      add.w   #50, health heal 50 health
+0000333E                           416      
+0000333E  43F9 00003C21            417      lea     heal_confirm_msg,A1
+00003344  103C 000E                418      move.b  #14,D0
+00003348  4E4F                     419      trap    #15
+0000334A                           420      
+0000334A  6100 03E2                421      bsr     endl
+0000334E                           422      
+0000334E  0C78 0064 1000           423      cmp     #100, health
+00003354  6E00 0006                424      bgt     fix_health if they have over 100 health, set it back to 100 (max)
+00003358  6F00 0008                425      ble     continue_on otherwise if it's equal or less, continue
+0000335C                           426      
+0000335C                           427  fix_health:
+0000335C  31FC 0064 1000           428      move.w  #100, health
+00003362                           429      
+00003362                           430  
+00003362                           431  continue_on:
+00003362                           432    
+00003362  6100 00D2                433      bsr     collision
+00003366  4E75                     434      rts
+00003368                           435  *-------------------------------------------------------
+00003368                           436  *-----------------Heads Up Display (Score)--------------
+00003368                           437  * Retrieves the score from memory location
+00003368                           438  *-------------------------------------------------------   
+00003368                           439  hud:
+00003368  6100 03C4                440      bsr     endl            print a CR and LF
+0000336C  6100 0372                441      bsr     decorate
+00003370  6100 03BC                442      bsr     endl
+00003374  43F9 00003F30            443      lea     hud_msg,A1
+0000337A  103C 000E                444      move.b  #14,D0
+0000337E  4E4F                     445      trap    #15
+00003380  3238 1002                446      move.w  score,D1     retrieve the value A3 point to and move to D1
+00003384  103C 0003                447      move.b  #3,D0       move literal 3 to D0
+00003388  4E4F                     448      trap    #15         intrepret value in D0, which 3 which displays D1
+0000338A  6100 0354                449      bsr     decorate
+0000338E  43F9 00003BA1            450      lea     gold_msg,A1
+00003394  103C 000E                451      move.b  #14,D0
+00003398  4E4F                     452      trap    #15 display message saying how much gold user has
+0000339A                           453      
+0000339A  3238 1004                454      move.w  gold,D1
+0000339E  103C 0003                455      move.b  #3,D0
+000033A2  4E4F                     456      trap    #15 display the number of gold
+000033A4                           457      
+000033A4  43F9 00003F39            458      lea     empty_msg,A1
+000033AA  103C 000E                459      move.b  #14,D0
+000033AE  4E4F                     460      trap    #15 put in a line break
+000033B0                           461      
+000033B0  6100 032E                462      bsr     decorate
+000033B4                           463      
+000033B4  43F9 00003B77            464      lea     potion_msg,A1
+000033BA  103C 000E                465      move.b  #14,D0
+000033BE  4E4F                     466      trap    #15
+000033C0                           467      
+000033C0  3238 1006                468      move.w  potion_count,D1
+000033C4  103C 0003                469      move.b  #3,D0
+000033C8  4E4F                     470      trap    #15 display the number of potions
+000033CA                           471      
+000033CA  43F9 00003F39            472      lea     empty_msg,A1
+000033D0  103C 000E                473      move.b  #14,D0
+000033D4  4E4F                     474      trap    #15 put in a line break
+000033D6                           475      
+000033D6  6100 0308                476      bsr     decorate
+000033DA                           477  
+000033DA  43F9 00003B8C            478      lea     weapon_msg,A1
+000033E0  103C 000E                479      move.b  #14,D0
+000033E4  4E4F                     480      trap    #15
+000033E6                           481      
+000033E6  3238 1008                482      move.w  weapon_count,D1
+000033EA  103C 0003                483      move.b  #3,D0
+000033EE  4E4F                     484      trap    #15 display the number of weapons
+000033F0                           485      
+000033F0  43F9 00003F39            486      lea     empty_msg,A1
+000033F6  103C 000E                487      move.b  #14,D0
+000033FA  4E4F                     488      trap    #15 put in a line break
+000033FC                           489      
+000033FC  6100 02E2                490      bsr     decorate
+00003400                           491      
+00003400  43F9 00003E86            492      lea     player_curr_health,A1
+00003406  103C 000E                493      move.b  #14,D0
+0000340A  4E4F                     494      trap    #15
+0000340C                           495      
+0000340C  3238 1000                496      move.w  health,D1
+00003410  103C 0003                497      move.b  #3,D0
+00003414  4E4F                     498      trap    #15 display the number of weapons
+00003416                           499      
+00003416  43F9 00003F39            500      lea     empty_msg,A1
+0000341C  103C 000E                501      move.b  #14,D0
+00003420  4E4F                     502      trap    #15 put in a line break
+00003422                           503      
+00003422  6100 02BC                504      bsr     decorate
+00003426                           505      
+00003426                           506      
+00003426                           507      
+00003426  103C 0004                508      move.b  #4,D0
+0000342A  4E4F                     509      trap    #15 wait for input to continue
+0000342C                           510      
+0000342C  6100 02D2                511      bsr     clear_screen
+00003430  6000 FC56                512      bra     gameloop
+00003434                           513  
+00003434  4E75                     514      rts
+00003436                           515  
+00003436                           516  *-------------------------------------------------------
+00003436                           517  *-----------------------Event Collisions----------------
+00003436                           518  * Used to see if the Player is at an event
+00003436                           519  *-------------------------------------------------------
+00003436                           520  collision:
+00003436  5278 1002                521      add.w   #1,  score give the player 1 point since they advanced without dying
+0000343A                           522    
+0000343A  0C78 0028 100A           523      cmp     #40, distance_travelled
+00003440  6700 0076                524      beq     potion_shop_event shop event when player moves 80 steps
+00003444                           525      
+00003444  0C78 0050 100A           526      cmp     #80, distance_travelled
+0000344A  6700 008E                527      beq     weapon_shop_event shop event when player moves 80 steps
+0000344E                           528      
+0000344E  0C78 0064 100A           529      cmp     #100, distance_travelled
+00003454  6700 00A6                530      beq     enemy_event first enemy encounter when player moves 100 steps
+00003458                           531      
+00003458  0C78 00A0 100A           532      cmp     #160, distance_travelled
+0000345E  6700 0058                533      beq     potion_shop_event shop event when player moves 160 steps
+00003462                           534      
+00003462  0C78 00DC 100A           535      cmp     #220, distance_travelled
+00003468  6700 0070                536      beq     weapon_shop_event shop event when player moves 220 steps
+0000346C                           537      
+0000346C  0C78 00C8 100A           538      cmp     #200, distance_travelled
+00003472  6700 0088                539      beq     enemy_event first enemy encounter when player moves 1200 steps
+00003476                           540      
+00003476  323C 03E8                541      move.w  #noir_loc,D1 check to see if the player has won the game
+0000347A  B278 100A                542      cmp      distance_travelled,D1 is( x == 2000)?  
+0000347E  6600 001E                543      bne     collision_miss if x is not equal to 100, then not hit
+00003482  6700 0002                544      beq     collision_hit  if x is equal to 100, then game is done
+00003486                           545      
+00003486                           546      
+00003486                           547  collision_hit:
+00003486                           548      *hit
+00003486  43F9 00003ED8            549      lea     hit_msg,A1
+0000348C  303C 000E                550      move    #14,D0
+00003490  4E4F                     551      trap    #15 show a message saying they have reached their destination
+00003492                           552      
+00003492  103C 0004                553      move.b  #4,D0 wait for player to press something before continuing
+00003496  4E4F                     554      trap    #15
+00003498                           555      
+00003498  6000 0272                556      bra     replay
+0000349C                           557      
+0000349C  4E75                     558      rts
+0000349E                           559      
+0000349E                           560  collision_miss:
+0000349E                           561      *miss
+0000349E  43F9 00003EE5            562      lea     miss_msg,A1
+000034A4  303C 000E                563      move    #14,D0
+000034A8  4E4F                     564      trap    #15 show a message saying the player has not yet reached their end point, but have not encountered any other event
+000034AA                           565      
+000034AA  0678 0014 100A           566      add.w   #20, distance_travelled show that the player has advanced
+000034B0                           567      
+000034B0  103C 0004                568      move.b  #4,D0
+000034B4  4E4F                     569      trap    #15 wait for player to press enter to advance
+000034B6                           570      
+000034B6  4E75                     571      rts
+000034B8                           572      
+000034B8                           573  potion_shop_event:
+000034B8  43F9 0000393A            574      lea     potion_event_start,A1
+000034BE  103C 000E                575      move.b  #14,D0
+000034C2  4E4F                     576      trap    #15 display a message saying a shop has appeared
+000034C4                           577      
+000034C4  103C 0004                578      move.b  #4,D0 get input on if the user wants to go in or not
+000034C8  4E4F                     579      trap    #15
+000034CA                           580      
+000034CA  0678 0014 100A           581      add.w   #20, distance_travelled show that the player has advanced
+000034D0                           582      
+000034D0  B27C 0001                583      cmp     #1, D1
+000034D4  6700 0044                584      beq     entered_potion_shop
+000034D8                           585      
+000034D8  4E75                     586      rts
+000034DA                           587      
+000034DA                           588  weapon_shop_event:
+000034DA  43F9 0000399D            589      lea     weapon_event_start,A1
+000034E0  103C 000E                590      move.b  #14,D0
+000034E4  4E4F                     591      trap    #15
+000034E6                           592      
+000034E6  103C 0004                593      move.b  #4,D0
+000034EA  4E4F                     594      trap    #15
+000034EC                           595      
+000034EC  0678 0014 100A           596      add.w   #20, distance_travelled show that the player has advanced
+000034F2                           597      
+000034F2  B27C 0001                598      cmp     #1, D1
+000034F6  6700 0028                599      beq     entered_weapon_shop
+000034FA                           600      
+000034FA  4E75                     601      rts
+000034FC                           602  
+000034FC                           603  enemy_event:
+000034FC  43F9 00003D77            604      lea     battle_start_msg,A1
+00003502  103C 000E                605      move.b  #14,D0
+00003506  4E4F                     606      trap    #15
+00003508                           607      
+00003508  103C 0004                608      move.b  #4,D0
+0000350C  4E4F                     609      trap    #15
+0000350E                           610  
+0000350E  6100 0016                611      bsr     battle_start
+00003512                           612      
+00003512  0678 0014 100A           613      add.w   #20, distance_travelled  if they survived, move 20 steps
+00003518                           614      
+00003518  4E75                     615      rts
+0000351A                           616  
+0000351A                           617      
+0000351A                           618  entered_potion_shop:
+0000351A  6100 FBAC                619      bsr     potions
+0000351E  4E75                     620      rts
+00003520                           621      
+00003520                           622  entered_weapon_shop:
+00003520  6100 FCAE                623      bsr     weapons
+00003524  4E75                     624      rts  
+00003526                           625  *-------------------------------------------------------
+00003526                           626  *-----------------------Battle System----------------
+00003526                           627  * When fighting an Enemy, we go here.
+00003526                           628  *-------------------------------------------------------
+00003526                           629  battle_start:
+00003526  3638 1000                630      move.w health, D3 move the player's current health into D3
+0000352A  383C 003C                631      move.w #60, D4     move enemy health into D4
+0000352E                           632      
+0000352E  0C78 0000 1008           633      cmp     #0, weapon_count
+00003534  6E00 007E                634      bgt     battle_weapon
+00003538  6000 0002                635      bra     battle_no_Weapon
+0000353C                           636      
+0000353C                           637  battle_no_weapon:
+0000353C                           638  
+0000353C                           639  
+0000353C  0443 000A                640      sub.w #10, D3
+00003540  0444 000A                641      sub.w #10, D4
+00003544                           642      
+00003544  43F9 00003DF9            643      lea     battle_player_nullWep_hit,A1 say that they have no weapons, so they deal less damage
+0000354A  103C 000E                644      move.b  #14,D0
+0000354E  4E4F                     645      trap    #15
+00003550                           646  
+00003550  43F9 00003E31            647      lea     battle_enemy_hit,A1 say how much the enemy hit you for
+00003556  103C 000E                648      move.b  #14,D0
+0000355A  4E4F                     649      trap    #15
+0000355C                           650      
+0000355C  43F9 00003E86            651      lea     player_curr_health,A1 display player health message
+00003562  103C 000E                652      move.b  #14,D0
+00003566  4E4F                     653      trap    #15
+00003568                           654  
+00003568  3203                     655      move.w  D3, D1
+0000356A  103C 0003                656      move.b  #3, D0
+0000356E  4E4F                     657      trap    #15 display player health
+00003570                           658      
+00003570  43F9 00003F39            659      lea     empty_msg,A1 carrage return
+00003576  103C 000E                660      move.b  #14,D0
+0000357A  4E4F                     661      trap    #15
+0000357C                           662      
+0000357C  43F9 00003E94            663      lea     enemy_curr_health,A1 display enemy health message
+00003582  103C 000E                664      move.b  #14,D0
+00003586  4E4F                     665      trap    #15
+00003588                           666      
+00003588  3204                     667      move.w  D4, D1
+0000358A  103C 0003                668      move.b  #3, D0
+0000358E  4E4F                     669      trap    #15 display enemy health
+00003590                           670      
+00003590  43F9 00003F39            671      lea     empty_msg,A1 carrage return
+00003596  103C 000E                672      move.b  #14,D0
+0000359A  4E4F                     673      trap    #15
+0000359C                           674   
+0000359C  B67C 0000                675      cmp     #0, D3 if the player's health is less than or equal to 0
+000035A0  6F00 008A                676      ble     game_over they have lost the fight
+000035A4                           677      
+000035A4  B87C 0000                678      cmp     #0, D4 if the enemy's health is less than or equal to 0
+000035A8  6F00 00DC                679      ble     battle_noWep_won they have won the fight (and didnt have any weapons)
+000035AC                           680      
+000035AC  103C 0004                681      move.b  #4,D0
+000035B0  4E4F                     682      trap    #15 if no one has lost, wait for input before continuing
+000035B2                           683      
+000035B2  6088                     684      bra battle_no_weapon if no one has lost, just keep looping
+000035B4                           685  
+000035B4                           686      
+000035B4                           687      
+000035B4                           688  battle_weapon: 
+000035B4                           689  * same as battle no wep but player deals 20 damage instead of 10
+000035B4  0443 000A                690      sub.w #10, D3
+000035B8  0444 0014                691      sub.w #20, D4
+000035BC                           692      
+000035BC  43F9 00003DC5            693      lea     battle_player_hit,A1
+000035C2  103C 000E                694      move.b  #14,D0
+000035C6  4E4F                     695      trap    #15
+000035C8                           696  
+000035C8  43F9 00003E31            697      lea     battle_enemy_hit,A1
+000035CE  103C 000E                698      move.b  #14,D0
+000035D2  4E4F                     699      trap    #15
+000035D4                           700      
+000035D4  43F9 00003E86            701      lea     player_curr_health,A1
+000035DA  103C 000E                702      move.b  #14,D0
+000035DE  4E4F                     703      trap    #15
+000035E0                           704  
+000035E0  3203                     705      move.w  D3, D1
+000035E2  103C 0003                706      move.b  #3, D0
+000035E6  4E4F                     707      trap    #15
+000035E8                           708      
+000035E8  43F9 00003F39            709      lea     empty_msg,A1
+000035EE  103C 000E                710      move.b  #14,D0
+000035F2  4E4F                     711      trap    #15
+000035F4                           712      
+000035F4  43F9 00003E94            713      lea     enemy_curr_health,A1
+000035FA  103C 000E                714      move.b  #14,D0
+000035FE  4E4F                     715      trap    #15
+00003600                           716      
+00003600  3204                     717      move.w  D4, D1
+00003602  103C 0003                718      move.b  #3, D0
+00003606  4E4F                     719      trap    #15
+00003608                           720      
+00003608  43F9 00003F39            721      lea     empty_msg,A1
+0000360E  103C 000E                722      move.b  #14,D0
+00003612  4E4F                     723      trap    #15
+00003614                           724   
+00003614  B67C 0000                725      cmp     #0, D3 if the player's health is less than or equal to 0
+00003618  6F00 0012                726      ble     game_over they have lost the fight
+0000361C                           727      
+0000361C  B87C 0000                728      cmp     #0, D4 if the enemy's health is less than or equal to 0
+00003620  6F00 0020                729      ble     battle_won they have won the fight
+00003624                           730      
+00003624  103C 0004                731      move.b  #4,D0
+00003628  4E4F                     732      trap    #15 if no one has lost, wait for input before continuing
+0000362A                           733      
+0000362A  6088                     734      bra battle_weapon if no one has lost, just keep looping
+0000362C                           735      
+0000362C                           736  game_over:
+0000362C  43F9 00003E7A            737      lea     battle_lose_msg,A1
+00003632  103C 000E                738      move.b  #14,D0
+00003636  4E4F                     739      trap    #15
+00003638                           740      
+00003638  103C 0004                741      move.b  #4,D0
+0000363C  4E4F                     742      trap    #15 if no one has lost, wait for input before continuing
+0000363E                           743      
+0000363E  6000 00CC                744      bra     replay
+00003642                           745  
+00003642                           746  battle_won:
+00003642  43F9 00003E54            747      lea     battle_win,A1 say they won in message form
+00003648  103C 000E                748      move.b  #14,D0
+0000364C  4E4F                     749      trap    #15
+0000364E                           750      
+0000364E  123C 0064                751      move.b  #100, D1
+00003652  103C 0003                752      move.b  #3, D0 say they won 100 gold
+00003656  4E4F                     753      trap    #15
+00003658                           754  
+00003658  43F9 00003E73            755      lea     battle_win_two,A1
+0000365E  103C 000E                756      move.b  #14,D0
+00003662  4E4F                     757      trap    #15
+00003664                           758      
+00003664  43F9 00003F39            759      lea     empty_msg,A1
+0000366A  103C 000E                760      move.b  #14,D0
+0000366E  4E4F                     761      trap    #15
+00003670                           762      
+00003670  0678 0064 1004           763      add.w   #100, gold give them 100 gold
+00003676                           764      
+00003676  31C3 1000                765      move.w  D3, health
+0000367A                           766      
+0000367A  103C 0004                767      move.b  #4,D0
+0000367E  4E4F                     768      trap    #15 wait for input before continuing
+00003680                           769      
+00003680  5378 1008                770      sub.w   #1, weapon_count take away a weapon because a fight has occured
+00003684                           771      
+00003684  4E75                     772      rts
+00003686                           773      
+00003686                           774  battle_noWep_won:
+00003686                           775  * same as battle_won but doesnt take away a weapon (cause they have none)
+00003686  43F9 00003E54            776      lea     battle_win,A1
+0000368C  103C 000E                777      move.b  #14,D0
+00003690  4E4F                     778      trap    #15
+00003692                           779      
+00003692  123C 0064                780      move.b  #100, D1
+00003696  103C 0003                781      move.b  #3, D0 say they won 100 gold
+0000369A  4E4F                     782      trap    #15
+0000369C                           783  
+0000369C  43F9 00003E73            784      lea     battle_win_two,A1
+000036A2  103C 000E                785      move.b  #14,D0
+000036A6  4E4F                     786      trap    #15
+000036A8                           787      
+000036A8  43F9 00003F39            788      lea     empty_msg,A1
+000036AE  103C 000E                789      move.b  #14,D0
+000036B2  4E4F                     790      trap    #15
+000036B4                           791      
+000036B4  0678 0064 1004           792      add.w   #100, gold
+000036BA                           793      
+000036BA  31C3 1000                794      move.w  D3, health
+000036BE                           795      
+000036BE  103C 0004                796      move.b  #4,D0
+000036C2  4E4F                     797      trap    #15 if no one has lost, wait for input before continuing
+000036C4                           798      
+000036C4  4E75                     799      rts
+000036C6                           800      
+000036C6                           801  *-------------------------------------------------------
+000036C6                           802  *--------------------------Loop-------------------------
+000036C6                           803  *-------------------------------------------------------
+000036C6                           804  loop:
+000036C6  163C 0005                805      move.b  #5, D3 loop counter D3=5
+000036CA                           806  next:
+000036CA  43F9 00003F00            807      lea     loop_msg,A1
+000036D0  103C 000E                808      move.b  #14,D0
+000036D4  4E4F                     809      trap    #15
+000036D6  5343                     810      sub     #1,D3   decrement loop counter
+000036D8                           811      
+000036D8  103C 0004                812      move.b  #4,D0
+000036DC  4E4F                     813      trap    #15 get input on how many weapons user wants
+000036DE                           814      
+000036DE  66EA                     815      bne     next    repeat until D0=0
+000036E0                           816  
+000036E0                           817  *-------------------------------------------------------
+000036E0                           818  *------------------Screen Decoration--------------------
+000036E0                           819  *-------------------------------------------------------
+000036E0                           820  decorate:
+000036E0  4243                     821      clr.w     D3
+000036E2  163C 003C                822      move.b  #60, D3
+000036E6  6100 0046                823      bsr     endl
+000036EA                           824  out:
+000036EA  43F9 00003F00            825      lea     loop_msg,A1
+000036F0  103C 000E                826      move.b  #14,D0
+000036F4  4E4F                     827      trap    #15
+000036F6  5343                     828      sub     #1,D3   decrement loop counter
+000036F8  66F0                     829      bne     out     repeat until D0=0
+000036FA  6100 0032                830      bsr     endl
+000036FE  4E75                     831      rts
+00003700                           832      
+00003700                           833  clear_screen: 
+00003700  103C 000B                834      move.b  #11,D0      clear screen
+00003704  323C FF00                835      move.w  #$ff00,D1
+00003708  4E4F                     836      trap    #15
+0000370A  4E75                     837      rts
+0000370C                           838  *-------------------------------------------------------
+0000370C                           839  *------------------------Replay-------------------------
+0000370C                           840  *-------------------------------------------------------
+0000370C                           841  replay:
+0000370C  6100 0020                842      bsr     endl
+00003710  43F9 00003F02            843      lea     replay_msg,A1
+00003716  103C 000E                844      move.b  #14,D0
+0000371A  4E4F                     845      trap    #15
+0000371C                           846      
+0000371C  103C 0004                847      move.b  #4,D0
+00003720  4E4F                     848      trap    #15
+00003722                           849  
+00003722  B27C 0000                850      cmp     #exit,D1
+00003726  6700 F8DE                851      beq     end         if SR Z register contains 1 beq => Branch Equals
+0000372A  6100 F95C                852      bsr     gameloop
+0000372E                           853  
+0000372E                           854  endl:
+0000372E  48E7 8040                855      movem.l D0/A1,-(A7)
+00003732  303C 000E                856      move    #14,D0
+00003736  43F9 00003744            857      lea     crlf,A1
+0000373C  4E4F                     858      trap    #15
+0000373E  4CDF 0201                859      movem.l (A7)+,D0/A1
+00003742  4E75                     860      rts
+00003744                           861      
+00003744                           862  *-------------------------------------------------------
+00003744                           863  *-------------------Data Delarations--------------------
+00003744                           864  *-------------------------------------------------------
+00003744                           865  
+00003744= 0D 0A 00                 866  crlf:                dc.b    $0D,$0A,0
+00003747= 2A 2A 2A 2A 2A 2A ...    867  welcome_msg:         dc.b    '************************************************************'
+00003783= 0D 0A                    868                       dc.b    $0D,$0A
+00003785= 41 76 61 6C 6F 6E ...    869                       dc.b    'Avalon: The Legend Lives'
+0000379D= 0D 0A                    870                       dc.b    $0D,$0A
+0000379F= 2A 2A 2A 2A 2A 2A ...    871                       dc.b    '************************************************************'
+000037DB= 0D 0A                    872                       dc.b    $0D,$0A
+000037DD= 45 6E 74 65 72 20 ...    873                       dc.b    'Enter 1 to Start, Enter 0 to Quit: ',0
+00003801= 0D 0A                    874  intro_msg:           dc.b    $0D,$0A
+00003803= 59 6F 75 20 61 6E ...    875                       dc.b    'You and your cavalry are given a quest to deliver '
+00003835= 0D 0A                    876                       dc.b    $0D,$0A
+00003837= 61 6E 20 61 6E 63 ...    877                       dc.b    'an ancient relic to the Kingdom of Noirheed.'
+00003863= 0D 0A                    878                       dc.b    $0D,$0A
+00003865= 42 65 66 6F 72 65 ...    879                       dc.b    'Before you leave, the King who bestowed you this quest'
+0000389B= 0D 0A                    880                       dc.b    $0D,$0A
+0000389D= 67 69 76 65 73 20 ...    881                       dc.b    'gives you half the payment upfront -- 5000 gold.'
+000038CD= 0D 0A                    882                       dc.b    $0D,$0A
+000038CF= 57 69 74 68 20 74 ...    883                       dc.b    'With this, you must decide how best to spend your gold,'
+00003906= 0D 0A                    884                       dc.b    $0D,$0A
+00003908= 61 6E 64 20 68 6F ...    885                       dc.b    'and how much you would like to keep for yourself.',0
+0000393A                           886  
+0000393A= 41 6C 6F 6E 67 20 ...    887  potion_event_start   dc.b    'Along your journey, you come across a Potion shop. Will you go in?'
+0000397C= 0D 0A                    888                       dc.b    $0D,$0A
+0000397E= 31 20 45 6E 74 65 ...    889                       dc.b    '1 Enter, Anything else Leave: ',0
+0000399D                           890                       
+0000399D= 41 6C 6F 6E 67 20 ...    891  weapon_event_start   dc.b    'Along your journey, you come across a Weapon shop. Will you go in?'
+000039DF= 0D 0A                    892                       dc.b    $0D,$0A
+000039E1= 31 20 45 6E 74 65 ...    893                       dc.b    '1 Enter, Anything else Leave: ',0
+00003A00                           894  
+00003A00= 59 6F 75 20 77 61 ...    895  potions_msg:         dc.b    'You walk into a nearby potion shop and decide how many potions you need. '
+00003A49= 0D 0A                    896                       dc.b    $0D,$0A
+00003A4B= 22 45 61 63 68 20 ...    897                       dc.b    '"Each potion costs 100 gold, how many do ye want?":  ',0
+00003A81                           898                       
+00003A81= 45 76 65 6E 20 77 ...    899  potions_error_max    dc.b    'Even with your cavalry team, you would not be able to hold that many potions.'
+00003ACE= 0D 0A 00                 900                       dc.b    $0D,$0A,0
+00003AD1                           901                       
+00003AD1= 59 6F 75 20 77 69 ...    902  potions_error_min    dc.b    'You will need potions to go on this journey.'
+00003AFD= 0D 0A 00                 903                       dc.b    $0D,$0A,0
+00003B00                           904                       
+00003B00= 59 6F 75 20 64 6F ...    905  error_money          dc.b    'You do not have enough money.'
+00003B1D= 0D 0A 00                 906                       dc.b    $0D,$0A,0
+00003B20                           907                       
+00003B20= 59 6F 75 20 64 6F ...    908  error_money_none     dc.b    'You do not have enough money to buy anything from the shop,'
+00003B5B= 0D 0A                    909                       dc.b    $0D,$0A
+00003B5D= 53 6F 20 79 6F 75 ...    910                       dc.b    'So you decide to leave.'
+00003B74= 0D 0A 00                 911                       dc.b    $0D,$0A,0
+00003B77                           912                       
+00003B77= 4E 75 6D 62 65 72 ...    913  potion_msg:          dc.b    'Number of potions : ',0
+00003B8C                           914  
+00003B8C= 4E 75 6D 62 65 72 ...    915  weapon_msg:          dc.b    'Number of weapons : ',0
+00003BA1                           916  
+00003BA1= 41 6D 6F 75 6E 74 ...    917  gold_msg             dc.b    'Amount of gold: ',0
+00003BB2                           918  
+00003BB2= 43 75 72 72 65 6E ...    919  health_msg           dc.b    'Current health: ',0
+00003BC3                           920  
+00003BC3= 57 6F 75 6C 64 20 ...    921  heal_ask_msg         dc.b    'Would you like to use a Potion to heal? (A Potion will heal 50 HP)'
+00003C05= 0D 0A                    922                       dc.b    $0D,$0A
+00003C07= 31 20 59 65 73 2C ...    923                       dc.b    '1 Yes, Anything else No: ',0
+00003C21                           924                       
+00003C21= 59 6F 75 20 68 65 ...    925  heal_confirm_msg     dc.b    'You healed 50 HP!',0
+00003C33                           926  
+00003C33= 59 6F 75 20 64 65 ...    927  weapons_msg:         dc.b    'You decide to buy some weapons for you and your cavalry.'
+00003C6B= 0D 0A                    928                       dc.b    $0D,$0A
+00003C6D= 45 61 63 68 20 66 ...    929                       dc.b    'Each fight will use at least 1 weapon and it`s 250 gold per weapon.'
+00003CB0= 0D 0A                    930                       dc.b    $0D,$0A
+00003CB2= 59 6F 75 20 61 6C ...    931                       dc.b    'You already have 5 weapons, but more is always good.'
+00003CE6= 0D 0A                    932                       dc.b    $0D,$0A
+00003CE8= 57 69 74 68 20 74 ...    933                       dc.b    'With this knowledge, you decide to buy: ',0 
+00003D11                           934                   
+00003D11= 41 73 20 79 6F 75 ...    935  weapons_error_max    dc.b    'As you already have weapons, that would be too many.'
+00003D45= 0D 0A 00                 936                       dc.b    $0D,$0A,0
+00003D48                           937                       
+00003D48= 59 6F 75 20 6E 65 ...    938  weapons_error_min    dc.b    'You need more weapons than you already have.'
+00003D74= 0D 0A 00                 939                       dc.b    $0D,$0A,0
+00003D77                           940                       
+00003D77= 53 75 64 64 65 6E ...    941  battle_start_msg     dc.b    'Suddenly, an Enemy appears..!',0
+00003D95                           942  
+00003D95= 59 6F 75 20 68 61 ...    943  battle_no_weapons    dc.b    'You have no weapons, so you deal less damage!'
+00003DC2= 0D 0A 00                 944                       dc.b    $0D,$0A,0
+00003DC5                           945  
+00003DC5= 59 6F 75 20 68 69 ...    946  battle_player_hit    dc.b    'You hit the Enemy for 20 damage with your weapon!'
+00003DF6= 0D 0A 00                 947                       dc.b    $0D,$0A,0
+00003DF9                           948                       
+00003DF9= 59 6F 75 20 68 69 ...    949  battle_player_nullWep_hit    dc.b    'You hit the Enemy for 10 damage with your bare fists!'
+00003E2E= 0D 0A 00                 950                       dc.b    $0D,$0A,0
+00003E31                           951                       
+00003E31= 59 6F 75 20 77 65 ...    952  battle_enemy_hit     dc.b    'You were hit and took 10 damage!'
+00003E51= 0D 0A 00                 953                       dc.b    $0D,$0A,0
+00003E54                           954                       
+00003E54= 59 6F 75 20 77 6F ...    955  battle_win           dc.b    'You won the battle! You found ',0
+00003E73= 20 67 6F 6C 64 21 00     956  battle_win_two       dc.b    ' gold!',0
+00003E7A                           957  
+00003E7A= 59 6F 75 20 6C 6F ...    958  battle_lose_msg      dc.b    'You lost...',0
+00003E86                           959  
+00003E86= 59 6F 75 72 20 48 ...    960  player_curr_health   dc.b    'Your Health: ',0
+00003E94= 45 6E 65 6D 79 20 ...    961  enemy_curr_health    dc.b    'Enemy Health: ',0
+00003EA3                           962            
+00003EA3= 44 69 73 74 61 6E ...    963  gameplay_msg:        dc.b    'Distance Travelled: ',0
+00003EB8                           964  
+00003EB8= 55 70 64 61 74 65 ...    965  update_msg:          dc.b    'Update Gameplay !',0
+00003ECA= 44 72 61 77 20 53 ...    966  draw_msg:            dc.b    'Draw Screen !',0
+00003ED8= 59 6F 75 20 6D 61 ...    967  hit_msg:             dc.b    'You made it!',0
+00003EE5= 4E 6F 74 68 69 6E ...    968  miss_msg:            dc.b    'Nothing eventful happened.',0
+00003F00= 2E 00                    969  loop_msg:            dc.b    '.',0
+00003F02= 45 6E 74 65 72 20 ...    970  replay_msg:          dc.b    'Enter 0 to Quit any other number to replay : ',0
+00003F30= 53 63 6F 72 65 20 ...    971  hud_msg:             dc.b    'Score : ',0
+00003F39= 0D 0A 00                 972  empty_msg            dc.b    '',$0D,$0A,0
+00003F3C                           973  
+00003F3C                           974  
+00003F3C                           975  
+00003F3C                           976      end start
 
 No errors detected
 No warnings generated
@@ -731,82 +986,103 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-CLEAR_SCREEN        34BC
-COLLISION           33E6
-COLLISION_HIT       3406
-COLLISION_MISS      341E
-CRLF                3500
+ASK_HEAL            331E
+BATTLE_ENEMY_HIT    3E31
+BATTLE_LOSE_MSG     3E7A
+BATTLE_NOWEP_WON    3686
+BATTLE_NO_WEAPON    353C
+BATTLE_NO_WEAPONS   3D95
+BATTLE_PLAYER_HIT   3DC5
+BATTLE_PLAYER_NULLWEP_HIT  3DF9
+BATTLE_START        3526
+BATTLE_START_MSG    3D77
+BATTLE_WEAPON       35B4
+BATTLE_WIN          3E54
+BATTLE_WIN_TWO      3E73
+BATTLE_WON          3642
+CLEAR_SCREEN        3700
+COLLISION           3436
+COLLISION_HIT       3486
+COLLISION_MISS      349E
+CONTINUE_ON         3362
+CRLF                3744
 CYAN                FFFF00
-DECORATE            349C
+DECORATE            36E0
 DISTANCE_TRAVELLED  100A
-DRAW                30D0
-DRAW_MSG            3A99
-EMPTY_MSG           3B02
+DRAW                30AA
+DRAW_MSG            3ECA
+EMPTY_MSG           3F39
 END                 3006
-ENDL                34EA
-ENTERED_POTION_SHOP  3476
-ENTERED_WEAPON_SHOP  347C
-ERROR_MONEY         387C
-ERROR_MONEY_NONE    389C
+ENDL                372E
+ENEMY_CURR_HEALTH   3E94
+ENEMY_EVENT         34FC
+ENTERED_POTION_SHOP  351A
+ENTERED_WEAPON_SHOP  3520
+ERROR_MONEY         3B00
+ERROR_MONEY_NONE    3B20
 EXIT                0
+FIX_HEALTH          335C
 FONT                1090000
 GAME                3000
 GAMELOOP            3088
-GAMEPLAY            3316
-GAMEPLAY_MSG        3A72
+GAMEPLAY            32E4
+GAMEPLAY_MSG        3EA3
+GAME_OVER           362C
 GOLD                1004
-GOLD_MSG            391D
+GOLD_MSG            3BA1
 HEALTH              1000
-HIT_MSG             3AA7
-HUD                 3346
-HUD_MSG             3AF9
+HEALTH_MSG          3BB2
+HEAL_ASK_MSG        3BC3
+HEAL_CONFIRM_MSG    3C21
+HIT_MSG             3ED8
+HUD                 3368
+HUD_MSG             3F30
 INPUT               307E
-INTRO_MSG           35BD
-LOOP                3482
-LOOP_MSG            3AC9
+INTRO_MSG           3801
+LOOP                36C6
+LOOP_MSG            3F00
 LOSE_POINT          8
 MAX_POTIONS         14
 MAX_WEAPONS         F
 MINE_LOC            64
 MIN_POTIONS         1
 MIN_WEAPONS         1
-MISS_MSG            3AB4
-NEXT                3486
-NOIR_LOC            7D0
-OUT                 34A6
-POTIONS             30EE
-POTIONSREMAIN       31EA
-POTIONS_ERROR_MAX   37FD
-POTIONS_ERROR_MIN   384D
-POTIONS_MSG         377C
+MISS_MSG            3EE5
+NEXT                36CA
+NOIR_LOC            3E8
+OUT                 36EA
+PLAYER_CURR_HEALTH  3E86
+POTIONS             30C8
+POTIONS_ERROR_MAX   3A81
+POTIONS_ERROR_MIN   3AD1
+POTIONS_MSG         3A00
 POTION_COUNT        1006
-POTION_ERROR_MAX    31AA
-POTION_ERROR_MIN    31BA
-POTION_ERROR_MONEY  31CA
-POTION_ERROR_MONEY_NONE  31DA
-POTION_EVENT_START  36F6
-POTION_MSG          38F3
-POTION_SHOP_EVENT   3436
+POTION_ERROR_MAX    3190
+POTION_ERROR_MIN    31A0
+POTION_ERROR_MONEY  31B0
+POTION_ERROR_MONEY_NONE  31C0
+POTION_EVENT_START  393A
+POTION_MSG          3B77
+POTION_SHOP_EVENT   34B8
 RED                 FF
-REPLAY              34C8
-REPLAY_MSG          3ACB
+REPLAY              370C
+REPLAY_MSG          3F02
 SCORE               1002
 START               100C
-UPDATE              30B2
-UPDATE_MSG          3A87
-WEAPONS             320E
-WEAPONS_ERROR_MAX   3A0C
-WEAPONS_ERROR_MIN   3A43
-WEAPONS_MSG         392E
+UPDATE_MSG          3EB8
+WEAPONS             31D0
+WEAPONS_ERROR_MAX   3D11
+WEAPONS_ERROR_MIN   3D48
+WEAPONS_MSG         3C33
 WEAPON_COUNT        1008
-WEAPON_ERROR_MAX    32D0
-WEAPON_ERROR_MIN    32E0
-WEAPON_ERROR_MONEY  32F0
-WEAPON_ERROR_MONEY_NONE  3304
-WEAPON_EVENT_START  3739
-WEAPON_MSG          3908
-WEAPON_SHOP_EVENT   3456
+WEAPON_ERROR_MAX    329E
+WEAPON_ERROR_MIN    32AE
+WEAPON_ERROR_MONEY  32BE
+WEAPON_ERROR_MONEY_NONE  32D2
+WEAPON_EVENT_START  399D
+WEAPON_MSG          3B8C
+WEAPON_SHOP_EVENT   34DA
 WELCOME             300A
-WELCOME_MSG         3503
+WELCOME_MSG         3747
 WHITE               FFFFFF
 WIN_POINT           5

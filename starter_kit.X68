@@ -3,9 +3,9 @@
 *-------------------------------------------------------
 * Name: Joshua Dunne
 * C00241588
-* Date(s): 11/02/19
+* Date(s): 21/01/19, 11/02/19, 18/02/19, 25/02/19, 11/03/19, 19/03/19, 23/03/19
 * Estimated Time Taken: 20 Hours
-* Actual Time Taken: ~6 Hour(s)
+* Actual Time Taken: ~14 Hour(s)
 * Known Bugs:
 *------------------------------------------------------
 
@@ -38,7 +38,7 @@ distance_travelled: dc.w    0 how far the player has gone (1000 to finish journe
 
 
 mine_loc    EQU 100    A location where a mine is found
-noir_loc    EQU 2000    Location of destination
+noir_loc    EQU 8000    Location of destination
 
 
 *Start of Game
@@ -125,11 +125,7 @@ input:
 *-------------------------------------------------------
 *----------------Gameloop (main loop)-------------------
 *------------------------------------------------------- 
-gameloop:
-    bsr     update          branch to update game subroutine 
-    bsr     clear_screen    clears the screen         
-    bsr     draw            branch to draw screen subroutine
-    bsr     clear_screen    clears the screen
+gameloop:        
     bsr     gameplay        branch to gameplay subroutine
     bsr     clear_screen    clears the screen
     bsr     hud             branch to display HUD subroutine
@@ -137,39 +133,10 @@ gameloop:
     bsr     replay          branch to replay game subroutine
     bsr     clear_screen    clears the screen
     rts                     return from gameloop: subroutine
-
-*-------------------------------------------------------
-*----------------Update Quest Progress------------------
-*  Complete Quest
-*------------------------------------------------------- 
-update:
-    bsr     endl            print a CR and LF
-    bsr     decorate        decorate with dots using a loop
-    bsr     endl            print a CR and LF
-    lea     update_msg,A1   
-    move.b  #14,D0
-    trap    #15
-    bsr     decorate
-    rts
-*-------------------------------------------------------
-*-----------------Draw Quest Updates--------------------
-* Draw the game progress information, status regarding
-* quest
-*------------------------------------------------------- 
-draw:
-    bsr     endl
-    bsr     decorate
-    bsr     endl            print a CR and LF
-    lea     draw_msg,A1
-    move.b  #14,D0
-    trap    #15
-    bsr     decorate
-    rts
 *-------------------------------------------------------
 *------------------------Potions------------------------
-* Input the ingredients for each potion. Ingredients costs 
-* money. For an advanced mark you need to manage this 
-* resource
+* Buy some potions from a shop
+* Each costs 100 in-game gold
 *------------------------------------------------------- 
 potions:
     bsr     endl
@@ -179,7 +146,7 @@ potions:
     move.b  #14,D0
     trap    #15 display message saying how much gold user has
     
-    move.w  (A4),D1
+    move.w  gold,D1
     move.b  #3,D0
     trap    #15 display the number of gold
     
@@ -187,9 +154,9 @@ potions:
     move.b  #14,D0
     trap    #15 put in a line break
     
-    move.w (A4),D3 temporarily move the amount of money they have into a data register
+    move.w  gold,D3 temporarily move the amount of money they have into a data register
     
-    cmp     #250, D3 check if the player has enough gold to buy 1 weapon (which costs 250 gold)
+    cmp     #250, D3 check if the player has enough gold to buy 1 potion (which costs 100 gold)
     blt     potion_error_money_none
     
     lea     potions_msg,A1
@@ -214,9 +181,9 @@ potions:
     
     bgt potion_error_money if they dont have enough, tell them
     
-    add.w  D1, (A5) otherwise move the amount of potions they bought into number A5
+    add.w  D1, potion_count otherwise move the amount of potions they bought into number A5
     
-    sub.w   D2,(A4) take away the cost
+    sub.w   D2,gold take away the cost
     
     clr     D3           we dont need the number in the register anymore
     
@@ -224,7 +191,7 @@ potions:
     move.b  #14,D0
     trap    #15 display message saying how much gold user has
     
-    move.w  (A4),D1
+    move.w  gold,D1
     move.b  #3,D0
     trap    #15 display the number of gold
     
@@ -236,7 +203,7 @@ potions:
     move.b  #14,D0
     trap    #15
     
-    move.w  (A5),D1
+    move.w  potion_count,D1
     move.b  #3,D0
     trap    #15 display the number of potions
     
@@ -255,46 +222,27 @@ potion_error_max:
     lea     potions_error_max,A1
     move.b  #14,D0
     trap    #15
-    bra     potions
+    bra     potions say they entered too many potions, then go back and let them enter again
 
 potion_error_min:
     lea     potions_error_min,A1
     move.b  #14,D0
     trap    #15
-    bra     potions
+    bra     potions say they entered too little potions, then go back and let them enter again
     
 potion_error_money:
     lea     error_money,A1
     move.b  #14,D0
     trap    #15
-    bra     potions
+    bra     potions say they dont have enough money to purchase the amount of potions they entered
     
 potion_error_money_none:
     lea     error_money_none,A1
     move.b  #14,D0
-    trap    #15
-    clr     D3   we dont need the number in the register anymore if it goes through
+    trap    #15 say they don't have enough money to enter the shop
+    clr     D3 
     rts
     
-
-*-------------------------------------------------------
-*--------------------Potions Inventory------------------
-* Number of potions to be used in a Quest 
-*------------------------------------------------------- 
-potionsremain:
-    bsr     endl
-    bsr     decorate
-    bsr     endl            print a CR and LF
-    lea     potion_msg,A1
-    move.b  #14,D0
-    trap    #15
-    bsr     decorate
-    
-    move.b  #4,D0
-    trap    #15 get input on how many weapons user wants
-    
-    rts
-
 *-------------------------------------------------------
 *-------------------------Weapons-----------------------
 * Number of weapons
@@ -308,11 +256,11 @@ weapons:
     move.b  #14,D0
     trap    #15 display message saying how much gold user has
     
-    move.w  (A4),D1
+    move.w  gold,D1
     move.b  #3,D0
     trap    #15 display the number of gold
     
-    move.w (A4),D3 temporarily move the amount of money they have into a data register
+    move.w gold,D3 temporarily move the amount of money they have into a data register
     
     cmp     #250, D3 check if the player has enough gold to buy 1 weapon (which costs 250 gold)
     blt     weapon_error_money_none
@@ -344,15 +292,15 @@ weapons:
     
     clr     D3 we dont need the number in the register anymore if it goes through
     
-    add.w  D1,(A6) otherwise move the amount of weapons they bought into number A6 
+    add.w  D1,weapon_count otherwise move the amount of weapons they bought into number A6 
     
-    sub.w   D2,(A4) take away the cost
+    sub.w   D2, gold take away the cost
     
     lea     gold_msg,A1
     move.b  #14,D0
     trap    #15 display message saying how much gold user has
     
-    move.w  (A4),D1
+    move.w  gold,D1
     move.b  #3,D0
     trap    #15 display the number of gold
     
@@ -364,7 +312,7 @@ weapons:
     move.b  #14,D0
     trap    #15
     
-    move.w  (A6),D1
+    move.w  weapon_count,D1
     move.b  #3,D0
     trap    #15 display the number of weapons
     
@@ -422,18 +370,52 @@ gameplay:
     move.b  #14,D0
     trap    #15
     
-    move.w  (A2),D1
+    move.w  distance_travelled,D1
     move.b  #3,D0
-    trap    #15
+    trap    #15 show how far the player has gone
     
     bsr     decorate
     
     move.b  #4,D0
     trap    #15 wait for input
     
+    cmp     #100, health
+    blt     ask_heal
+    bge     continue_on
+
+ask_heal:
+
+    lea     heal_ask_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.b  #4,D0
+    trap    #15 check if user wants to heal
+    
+    cmp     #1, D1 
+    bne     continue_on if they put in anything else, just continue
+* if they put in one, heal them
+
+    add.w   #50, health heal 50 health
+    
+    lea     heal_confirm_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    bsr     endl
+    
+    cmp     #100, health
+    bgt     fix_health if they have over 100 health, set it back to 100 (max)
+    ble     continue_on otherwise if it's equal or less, continue
+    
+fix_health:
+    move.w  #100, health
+    
+
+continue_on:
+  
     bsr     collision
     rts
-
 *-------------------------------------------------------
 *-----------------Heads Up Display (Score)--------------
 * Retrieves the score from memory location
@@ -445,7 +427,7 @@ hud:
     lea     hud_msg,A1
     move.b  #14,D0
     trap    #15
-    move.w  (A3),D1     retrieve the value A3 point to and move to D1
+    move.w  score,D1     retrieve the value A3 point to and move to D1
     move.b  #3,D0       move literal 3 to D0
     trap    #15         intrepret value in D0, which 3 which displays D1
     bsr     decorate
@@ -453,7 +435,7 @@ hud:
     move.b  #14,D0
     trap    #15 display message saying how much gold user has
     
-    move.w  (A4),D1
+    move.w  gold,D1
     move.b  #3,D0
     trap    #15 display the number of gold
     
@@ -467,7 +449,7 @@ hud:
     move.b  #14,D0
     trap    #15
     
-    move.w  (A5),D1
+    move.w  potion_count,D1
     move.b  #3,D0
     trap    #15 display the number of potions
     
@@ -481,7 +463,7 @@ hud:
     move.b  #14,D0
     trap    #15
     
-    move.w  (A6),D1
+    move.w  weapon_count,D1
     move.b  #3,D0
     trap    #15 display the number of weapons
     
@@ -490,6 +472,22 @@ hud:
     trap    #15 put in a line break
     
     bsr     decorate
+    
+    lea     player_curr_health,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.w  health,D1
+    move.b  #3,D0
+    trap    #15 display the number of weapons
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
+    bsr     decorate
+    
+    
     
     move.b  #4,D0
     trap    #15 wait for input to continue
@@ -504,16 +502,28 @@ hud:
 * Used to see if the Player is at an event
 *-------------------------------------------------------
 collision:
-    add.w   #1,  (A3)
+    add.w   #1,  score give the player 1 point since they advanced without dying
   
-	cmp     #40,(A2)
-	beq     potion_shop_event
+	cmp     #40, distance_travelled
+	beq     potion_shop_event shop event when player moves 80 steps
 	
-	cmp     #80,(A2)
-	beq     weapon_shop_event
+	cmp     #80, distance_travelled
+	beq     weapon_shop_event shop event when player moves 80 steps
 	
-	move.b  #mine_loc,D1
-    cmp     (A2),D1 is( x == 100)?  
+	cmp     #100, distance_travelled
+	beq     enemy_event first enemy encounter when player moves 100 steps
+	
+	cmp     #160, distance_travelled
+	beq     potion_shop_event shop event when player moves 160 steps
+	
+	cmp     #200, distance_travelled
+	beq     enemy_event first enemy encounter when player moves 1200 steps	
+		
+	cmp     #220, distance_travelled
+	beq     weapon_shop_event shop event when player moves 220 steps
+	
+	move.w  #noir_loc,D1 check to see if the player has won the game
+    cmp      distance_travelled,D1 is( x == 2000)?  
 	bne     collision_miss if x is not equal to 100, then not hit
 	beq     collision_hit  if x is equal to 100, then game is done
 	
@@ -522,9 +532,9 @@ collision_hit:
     *hit
     lea     hit_msg,A1
     move    #14,D0
-    trap    #15
+    trap    #15 show a message saying they have reached their destination
     
-    move.b  #4,D0
+    move.b  #4,D0 wait for player to press something before continuing
     trap    #15
     
     bra     replay
@@ -535,24 +545,24 @@ collision_miss:
     *miss
     lea     miss_msg,A1
     move    #14,D0
-    trap    #15
+    trap    #15 show a message saying the player has not yet reached their end point, but have not encountered any other event
     
-    add.w   #20, (A2)
+    add.w   #20, distance_travelled show that the player has advanced
     
     move.b  #4,D0
-    trap    #15 get input on how many weapons user wants
+    trap    #15 wait for player to press enter to advance
     
     rts
     
 potion_shop_event:
     lea     potion_event_start,A1
     move.b  #14,D0
+    trap    #15 display a message saying a shop has appeared
+    
+    move.b  #4,D0 get input on if the user wants to go in or not
     trap    #15
     
-    move.b  #4,D0
-    trap    #15
-    
-    add.w   #20, (A2)
+    add.w   #20, distance_travelled show that the player has advanced
     
     cmp     #1, D1
     beq     entered_potion_shop
@@ -567,10 +577,24 @@ weapon_shop_event:
     move.b  #4,D0
     trap    #15
     
-    add.w   #20, (A2)
+    add.w   #20, distance_travelled show that the player has advanced
     
     cmp     #1, D1
     beq     entered_weapon_shop
+    
+    rts
+
+enemy_event:
+    lea     battle_start_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.b  #4,D0
+    trap    #15
+
+    bsr     battle_start
+    
+    add.w   #20, distance_travelled  if they survived, move 20 steps
     
     rts
 
@@ -581,7 +605,183 @@ entered_potion_shop:
     
 entered_weapon_shop:
     bsr     weapons
+    rts  
+*-------------------------------------------------------
+*-----------------------Battle System----------------
+* When fighting an Enemy, we go here.
+*-------------------------------------------------------
+battle_start:
+    move.w health, D3 move the player's current health into D3
+    move.w #60, D4     move enemy health into D4
+    
+    cmp     #0, weapon_count
+    bgt     battle_weapon
+    bra     battle_no_Weapon
+    
+battle_no_weapon:
+
+
+    sub.w #10, D3
+    sub.w #10, D4
+    
+    lea     battle_player_nullWep_hit,A1 say that they have no weapons, so they deal less damage
+    move.b  #14,D0
+    trap    #15
+
+    lea     battle_enemy_hit,A1 say how much the enemy hit you for
+    move.b  #14,D0
+    trap    #15
+    
+    lea     player_curr_health,A1 display player health message
+    move.b  #14,D0
+    trap    #15
+
+    move.w  D3, D1
+    move.b  #3, D0
+    trap    #15 display player health
+    
+    lea     empty_msg,A1 carrage return
+    move.b  #14,D0
+    trap    #15
+    
+    lea     enemy_curr_health,A1 display enemy health message
+    move.b  #14,D0
+    trap    #15
+    
+    move.w  D4, D1
+    move.b  #3, D0
+    trap    #15 display enemy health
+    
+    lea     empty_msg,A1 carrage return
+    move.b  #14,D0
+    trap    #15
+ 
+    cmp     #0, D3 if the player's health is less than or equal to 0
+    ble     game_over they have lost the fight
+    
+    cmp     #0, D4 if the enemy's health is less than or equal to 0
+    ble     battle_noWep_won they have won the fight (and didnt have any weapons)
+    
+    move.b  #4,D0
+    trap    #15 if no one has lost, wait for input before continuing
+    
+    bra battle_no_weapon if no one has lost, just keep looping
+
+    
+    
+battle_weapon: 
+* same as battle no wep but player deals 20 damage instead of 10
+    sub.w #10, D3
+    sub.w #20, D4
+    
+    lea     battle_player_hit,A1
+    move.b  #14,D0
+    trap    #15
+
+    lea     battle_enemy_hit,A1
+    move.b  #14,D0
+    trap    #15
+    
+    lea     player_curr_health,A1
+    move.b  #14,D0
+    trap    #15
+
+    move.w  D3, D1
+    move.b  #3, D0
+    trap    #15
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    lea     enemy_curr_health,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.w  D4, D1
+    move.b  #3, D0
+    trap    #15
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15
+ 
+    cmp     #0, D3 if the player's health is less than or equal to 0
+    ble     game_over they have lost the fight
+    
+    cmp     #0, D4 if the enemy's health is less than or equal to 0
+    ble     battle_won they have won the fight
+    
+    move.b  #4,D0
+    trap    #15 if no one has lost, wait for input before continuing
+    
+    bra battle_weapon if no one has lost, just keep looping
+    
+game_over:
+    lea     battle_lose_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.b  #4,D0
+    trap    #15 if no one has lost, wait for input before continuing
+    
+    bra     replay
+
+battle_won:
+    lea     battle_win,A1 say they won in message form
+    move.b  #14,D0
+    trap    #15
+    
+    move.b  #100, D1
+    move.b  #3, D0 say they won 100 gold
+    trap    #15
+
+    lea     battle_win_two,A1
+    move.b  #14,D0
+    trap    #15
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    add.w   #100, gold give them 100 gold
+    
+    move.w  D3, health
+    
+    move.b  #4,D0
+    trap    #15 wait for input before continuing
+    
+    sub.w   #1, weapon_count take away a weapon because a fight has occured
+    
     rts
+    
+battle_noWep_won:
+* same as battle_won but doesnt take away a weapon (cause they have none)
+    lea     battle_win,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.b  #100, D1
+    move.b  #3, D0 say they won 100 gold
+    trap    #15
+
+    lea     battle_win_two,A1
+    move.b  #14,D0
+    trap    #15
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    add.w   #100, gold
+    
+    move.w  D3, health
+    
+    move.b  #4,D0
+    trap    #15 if no one has lost, wait for input before continuing
+    
+    rts
+    
 *-------------------------------------------------------
 *--------------------------Loop-------------------------
 *-------------------------------------------------------
@@ -668,18 +868,27 @@ intro_msg:           dc.b    $0D,$0A
                      dc.b    $0D,$0A
                      dc.b    'and how much you would like to keep for yourself.',0
 
-potion_event_start   dc.b    'Along your journey, you come across a Potion shop. Will you go in?',0
-weapon_event_start   dc.b    'Along your journey, you come across a Weapon shop. Will you go in?',0
+potion_event_start   dc.b    'Along your journey, you come across a Potion shop. Will you go in?'
+                     dc.b    $0D,$0A
+                     dc.b    '1 Enter, Anything else Leave: ',0
+                     
+weapon_event_start   dc.b    'Along your journey, you come across a Weapon shop. Will you go in?'
+                     dc.b    $0D,$0A
+                     dc.b    '1 Enter, Anything else Leave: ',0
 
 potions_msg:         dc.b    'You walk into a nearby potion shop and decide how many potions you need. '
                      dc.b    $0D,$0A
                      dc.b    '"Each potion costs 100 gold, how many do ye want?":  ',0
+                     
 potions_error_max    dc.b    'Even with your cavalry team, you would not be able to hold that many potions.'
                      dc.b    $0D,$0A,0
+                     
 potions_error_min    dc.b    'You will need potions to go on this journey.'
                      dc.b    $0D,$0A,0
+                     
 error_money          dc.b    'You do not have enough money.'
                      dc.b    $0D,$0A,0
+                     
 error_money_none     dc.b    'You do not have enough money to buy anything from the shop,'
                      dc.b    $0D,$0A
                      dc.b    'So you decide to leave.'
@@ -690,6 +899,14 @@ potion_msg:          dc.b    'Number of potions : ',0
 weapon_msg:          dc.b    'Number of weapons : ',0
 
 gold_msg             dc.b    'Amount of gold: ',0
+
+health_msg           dc.b    'Current health: ',0
+
+heal_ask_msg         dc.b    'Would you like to use a Potion to heal? (A Potion will heal 50 HP)'
+                     dc.b    $0D,$0A
+                     dc.b    '1 Yes, Anything else No: ',0
+                     
+heal_confirm_msg     dc.b    'You healed 50 HP!',0
 
 weapons_msg:         dc.b    'You decide to buy some weapons for you and your cavalry.'
                      dc.b    $0D,$0A
@@ -704,13 +921,35 @@ weapons_error_max    dc.b    'As you already have weapons, that would be too man
                      
 weapons_error_min    dc.b    'You need more weapons than you already have.'
                      dc.b    $0D,$0A,0
+                     
+battle_start_msg     dc.b    'Suddenly, an Enemy appears..!',0
+
+battle_no_weapons    dc.b    'You have no weapons, so you deal less damage!'
+                     dc.b    $0D,$0A,0
+
+battle_player_hit    dc.b    'You hit the Enemy for 20 damage with your weapon!'
+                     dc.b    $0D,$0A,0
+                     
+battle_player_nullWep_hit    dc.b    'You hit the Enemy for 10 damage with your bare fists!'
+                     dc.b    $0D,$0A,0
+                     
+battle_enemy_hit     dc.b    'You were hit and took 10 damage!'
+                     dc.b    $0D,$0A,0
+                     
+battle_win           dc.b    'You won the battle! You found ',0
+battle_win_two       dc.b    ' gold!',0
+
+battle_lose_msg      dc.b    'You lost...',0
+
+player_curr_health   dc.b    'Your Health: ',0
+enemy_curr_health    dc.b    'Enemy Health: ',0
           
 gameplay_msg:        dc.b    'Distance Travelled: ',0
 
 update_msg:          dc.b    'Update Gameplay !',0
 draw_msg:            dc.b    'Draw Screen !',0
 hit_msg:             dc.b    'You made it!',0
-miss_msg:            dc.b    'Not much longer now.',0
+miss_msg:            dc.b    'Nothing eventful happened.',0
 loop_msg:            dc.b    '.',0
 replay_msg:          dc.b    'Enter 0 to Quit any other number to replay : ',0
 hud_msg:             dc.b    'Score : ',0
@@ -719,6 +958,8 @@ empty_msg            dc.b    '',$0D,$0A,0
 
 
     end start
+
+
 
 
 
