@@ -31,14 +31,14 @@ WHITE   EQU             $00FFFFFF
 FONT    EQU             $01090000
 health:     dc.w    100 Player's health
 score:      dc.w    0 reserve space for score
-gold:       dc.w    5000 gold player has (starts at 5000)
+gold:       dc.w    3000 gold player has (starts at 5000)
 potion_count:    dc.w    0 potions player has (starts at 0)
 weapon_count:    dc.w    5 number of weapons player has (starts at 5)
 distance_travelled: dc.w    0 how far the player has gone (1000 to finish journey)
 
 
 mine_loc    EQU 100    A location where a mine is found
-noir_loc    EQU 8000    Location of destination
+noir_loc    EQU 800    Location of destination
 
 
 *Start of Game
@@ -517,13 +517,54 @@ collision:
 	beq     potion_shop_event shop event when player moves 160 steps
 	
 	cmp     #200, distance_travelled
-	beq     enemy_event first enemy encounter when player moves 1200 steps	
+	beq     enemy_event first enemy encounter when player moves 200 steps	
 		
 	cmp     #220, distance_travelled
 	beq     weapon_shop_event shop event when player moves 220 steps
 	
+	cmp     #260, distance_travelled
+	beq     enemy_event first enemy encounter when player moves 260 steps	
+	
+	cmp     #300, distance_travelled
+	beq     enemy_event first enemy encounter when player moves 300 steps
+	
+	cmp     #340, distance_travelled
+	beq     potion_shop_event shop event when player moves 340 steps
+	
+	cmp     #360, distance_travelled
+	beq     enemy_event first enemy encounter when player moves 360 steps
+	
+	cmp     #400, distance_travelled
+	beq     enemy_event first enemy encounter when player moves 400 steps
+	
+	cmp     #440, distance_travelled
+	beq     weapon_shop_event shop event when player moves 80 steps
+	
+	cmp     #500, distance_travelled
+	beq     enemy_event first enemy encounter when player moves 360 steps
+	
+	cmp     #560, distance_travelled
+	beq     enemy_event first enemy encounter when player moves 400 steps
+	
+	cmp     #660, distance_travelled
+	beq     enemy_event first enemy encounter when player moves 360 steps
+	
+	cmp     #700, distance_travelled
+	beq     enemy_event first enemy encounter when player moves 400 steps
+	
+	cmp     #720, distance_travelled
+	beq     potion_shop_event shop event when player moves 80 steps
+	
+	cmp     #740, distance_travelled
+	beq     weapon_shop_event shop event when player moves 80 steps
+	
+	cmp     #780, distance_travelled
+	beq     boss_event
+
+    	
+	
 	move.w  #noir_loc,D1 check to see if the player has won the game
-    cmp      distance_travelled,D1 is( x == 2000)?  
+    cmp     distance_travelled,D1 is( x == 1000)?  
 	bne     collision_miss if x is not equal to 100, then not hit
 	beq     collision_hit  if x is equal to 100, then game is done
 	
@@ -598,6 +639,20 @@ enemy_event:
     
     rts
 
+
+boss_event:
+    lea     boss_battle_start_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.b  #4,D0
+    trap    #15
+
+    bsr     boss_battle_start
+    
+    add.w   #20, distance_travelled  if they survived, move 20 steps
+    
+    rts
     
 entered_potion_shop:
     bsr     potions
@@ -606,6 +661,7 @@ entered_potion_shop:
 entered_weapon_shop:
     bsr     weapons
     rts  
+
 *-------------------------------------------------------
 *-----------------------Battle System----------------
 * When fighting an Enemy, we go here.
@@ -615,8 +671,16 @@ battle_start:
     move.w #60, D4     move enemy health into D4
     
     cmp     #0, weapon_count
-    bgt     battle_weapon
-    bra     battle_no_Weapon
+    bgt     battle_weapon if they have at least 1 weapon, go into battle with it
+    bra     battle_no_Weapon otherwise fight bare handed
+    
+boss_battle_start:
+    move.w health, D3 move the player's current health into D3
+    move.w #120, D4     move boss health into D4
+    
+    cmp     #0, weapon_count
+    bgt     boss_battle_weapon if they have at least 1 weapon, go into boss battle with it
+    bra     boss_battle_no_weapon otherwise fight vare handed
     
 battle_no_weapon:
 
@@ -717,13 +781,110 @@ battle_weapon:
     
     bra battle_weapon if no one has lost, just keep looping
     
+boss_battle_no_weapon:
+
+    sub.w #10, D3
+    sub.w #5, D4
+    
+    lea     boss_battle_player_nullWep_hit,A1 say that they have no weapons, so they deal less damage
+    move.b  #14,D0
+    trap    #15
+
+    lea     battle_enemy_hit,A1 say how much the enemy hit you for
+    move.b  #14,D0
+    trap    #15
+    
+    lea     player_curr_health,A1 display player health message
+    move.b  #14,D0
+    trap    #15
+
+    move.w  D3, D1
+    move.b  #3, D0
+    trap    #15 display player health
+    
+    lea     empty_msg,A1 carrage return
+    move.b  #14,D0
+    trap    #15
+    
+    lea     enemy_curr_health,A1 display enemy health message
+    move.b  #14,D0
+    trap    #15
+    
+    move.w  D4, D1
+    move.b  #3, D0
+    trap    #15 display enemy health
+    
+    lea     empty_msg,A1 carrage return
+    move.b  #14,D0
+    trap    #15
+ 
+    cmp     #0, D3 if the player's health is less than or equal to 0
+    ble     game_over they have lost the fight
+    
+    cmp     #0, D4 if the enemy's health is less than or equal to 0
+    ble     battle_noWep_won they have won the fight (and didnt have any weapons)
+    
+    move.b  #4,D0
+    trap    #15 if no one has lost, wait for input before continuing
+    
+    bra boss_battle_no_weapon if no one has lost, just keep looping
+    
+boss_battle_weapon: 
+* same as boss battle no wep but player deals 20 damage instead of 10
+    sub.w #10, D3
+    sub.w #20, D4
+    
+    lea     battle_player_hit,A1
+    move.b  #14,D0
+    trap    #15
+
+    lea     battle_enemy_hit,A1
+    move.b  #14,D0
+    trap    #15
+    
+    lea     player_curr_health,A1
+    move.b  #14,D0
+    trap    #15
+
+    move.w  D3, D1
+    move.b  #3, D0
+    trap    #15
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    lea     enemy_curr_health,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.w  D4, D1
+    move.b  #3, D0
+    trap    #15
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15
+ 
+    cmp     #0, D3 if the player's health is less than or equal to 0
+    ble     game_over they have lost the fight
+    
+    cmp     #0, D4 if the enemy's health is less than or equal to 0
+    ble     battle_won they have won the fight
+    
+    move.b  #4,D0
+    trap    #15 if no one has lost, wait for input before continuing
+    
+    bra boss_battle_weapon if no one has lost, just keep looping
+
+    
 game_over:
     lea     battle_lose_msg,A1
     move.b  #14,D0
     trap    #15
     
     move.b  #4,D0
-    trap    #15 if no one has lost, wait for input before continuing
+    trap    #15 wait for input before replay
     
     bra     replay
 
@@ -781,6 +942,35 @@ battle_noWep_won:
     trap    #15 if no one has lost, wait for input before continuing
     
     rts
+    
+boss_battle_won
+    lea     battle_win,A1 say they won in message form
+    move.b  #14,D0
+    trap    #15
+    
+    move.w  #500, D1
+    move.b  #3, D0 say they won 100 gold
+    trap    #15
+
+    lea     battle_win_two,A1
+    move.b  #14,D0
+    trap    #15
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    add.w   #500, gold give them 500 gold
+    
+    move.w  D3, health
+    
+    move.b  #4,D0
+    trap    #15 wait for input before continuing
+    
+    sub.w   #1, weapon_count take away a weapon because a fight has occured
+    
+    rts
+
     
 *-------------------------------------------------------
 *--------------------------Loop-------------------------
@@ -862,7 +1052,7 @@ intro_msg:           dc.b    $0D,$0A
                      dc.b    $0D,$0A
                      dc.b    'Before you leave, the King who bestowed you this quest'
                      dc.b    $0D,$0A
-                     dc.b    'gives you half the payment upfront -- 5000 gold.'
+                     dc.b    'gives you half the payment upfront -- 3000 gold.'
                      dc.b    $0D,$0A
                      dc.b    'With this, you must decide how best to spend your gold,'
                      dc.b    $0D,$0A
@@ -924,6 +1114,8 @@ weapons_error_min    dc.b    'You need more weapons than you already have.'
                      
 battle_start_msg     dc.b    'Suddenly, an Enemy appears..!',0
 
+boss_battle_start_msg     dc.b    'Suddenly, a Giant Boss appears!!',0
+
 battle_no_weapons    dc.b    'You have no weapons, so you deal less damage!'
                      dc.b    $0D,$0A,0
 
@@ -931,6 +1123,9 @@ battle_player_hit    dc.b    'You hit the Enemy for 20 damage with your weapon!'
                      dc.b    $0D,$0A,0
                      
 battle_player_nullWep_hit    dc.b    'You hit the Enemy for 10 damage with your bare fists!'
+                     dc.b    $0D,$0A,0
+                     
+boss_battle_player_nullWep_hit    dc.b    'You hit the Boss for 5 damage with your bare fists!'
                      dc.b    $0D,$0A,0
                      
 battle_enemy_hit     dc.b    'You were hit and took 10 damage!'
@@ -958,6 +1153,7 @@ empty_msg            dc.b    '',$0D,$0A,0
 
 
     end start
+
 
 
 
