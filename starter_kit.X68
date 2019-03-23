@@ -34,7 +34,7 @@ score:      dc.w    0 reserve space for score
 gold:       dc.w    3000 gold player has (starts at 5000)
 potion_count:    dc.w    0 potions player has (starts at 0)
 weapon_count:    dc.w    5 number of weapons player has (starts at 5)
-distance_travelled: dc.w    0 how far the player has gone (1000 to finish journey)
+distance_travelled: dc.w    700 how far the player has gone (800 to finish journey)
 
 
 mine_loc    EQU 100    A location where a mine is found
@@ -129,8 +129,6 @@ gameloop:
     bsr     gameplay        branch to gameplay subroutine
     bsr     clear_screen    clears the screen
     bsr     hud             branch to display HUD subroutine
-    bsr     clear_screen    clears the screen
-    bsr     replay          branch to replay game subroutine
     bsr     clear_screen    clears the screen
     rts                     return from gameloop: subroutine
 *-------------------------------------------------------
@@ -398,6 +396,8 @@ ask_heal:
 
     add.w   #50, health heal 50 health
     
+    sub.w   #1, potion_count
+    
     lea     heal_confirm_msg,A1
     move.b  #14,D0
     trap    #15
@@ -578,7 +578,7 @@ collision_hit:
     move.b  #4,D0 wait for player to press something before continuing
     trap    #15
     
-    bra     replay
+    bra     end
     
     rts
     
@@ -670,7 +670,7 @@ battle_start:
     move.w health, D3 move the player's current health into D3
     move.w #60, D4     move enemy health into D4
     
-    cmp     #0, weapon_count
+    cmp.w     #0, weapon_count
     bgt     battle_weapon if they have at least 1 weapon, go into battle with it
     bra     battle_no_Weapon otherwise fight bare handed
     
@@ -678,9 +678,9 @@ boss_battle_start:
     move.w health, D3 move the player's current health into D3
     move.w #120, D4     move boss health into D4
     
-    cmp     #0, weapon_count
+    cmp.w     #0, weapon_count
     bgt     boss_battle_weapon if they have at least 1 weapon, go into boss battle with it
-    bra     boss_battle_no_weapon otherwise fight vare handed
+    bra     boss_battle_no_weapon otherwise fight bare handed
     
 battle_no_weapon:
 
@@ -773,8 +773,7 @@ battle_weapon:
     cmp     #0, D3 if the player's health is less than or equal to 0
     ble     game_over they have lost the fight
     
-    cmp     #0, D4 if the enemy's health is less than or equal to 0
-    ble     battle_won they have won the fight
+* NOTE: Win check is not done as the Player cannot win in this scenario, if they have no weapons, they will lose.
     
     move.b  #4,D0
     trap    #15 if no one has lost, wait for input before continuing
@@ -870,7 +869,7 @@ boss_battle_weapon:
     ble     game_over they have lost the fight
     
     cmp     #0, D4 if the enemy's health is less than or equal to 0
-    ble     battle_won they have won the fight
+    ble     boss_battle_won they have won the fight
     
     move.b  #4,D0
     trap    #15 if no one has lost, wait for input before continuing
@@ -884,9 +883,9 @@ game_over:
     trap    #15
     
     move.b  #4,D0
-    trap    #15 wait for input before replay
+    trap    #15 wait for input before ending
     
-    bra     replay
+    bra     end
 
 battle_won:
     lea     battle_win,A1 say they won in message form
@@ -1010,21 +1009,8 @@ clear_screen:
     trap    #15
     rts
 *-------------------------------------------------------
-*------------------------Replay-------------------------
+*------------------------endl - end line----------------
 *-------------------------------------------------------
-replay:
-    bsr     endl
-    lea     replay_msg,A1
-    move.b  #14,D0
-    trap    #15
-    
-    move.b  #4,D0
-    trap    #15
-
-    cmp     #exit,D1
-    beq     end         if SR Z register contains 1 beq => Branch Equals
-    bsr     gameloop
-
 endl:
     movem.l D0/A1,-(A7)
     move    #14,D0
@@ -1125,7 +1111,7 @@ battle_player_hit    dc.b    'You hit the Enemy for 20 damage with your weapon!'
 battle_player_nullWep_hit    dc.b    'You hit the Enemy for 10 damage with your bare fists!'
                      dc.b    $0D,$0A,0
                      
-boss_battle_player_nullWep_hit    dc.b    'You hit the Boss for 5 damage with your bare fists!'
+boss_battle_player_nullWep_hit    dc.b    'You hit the Boss for 10 damage with your bare fists!'
                      dc.b    $0D,$0A,0
                      
 battle_enemy_hit     dc.b    'You were hit and took 10 damage!'
@@ -1146,7 +1132,6 @@ draw_msg:            dc.b    'Draw Screen !',0
 hit_msg:             dc.b    'You made it!',0
 miss_msg:            dc.b    'Nothing eventful happened.',0
 loop_msg:            dc.b    '.',0
-replay_msg:          dc.b    'Enter 0 to Quit any other number to replay : ',0
 hud_msg:             dc.b    'Score : ',0
 empty_msg            dc.b    '',$0D,$0A,0
 
