@@ -34,10 +34,8 @@ score:      dc.w    0 reserve space for score
 gold:       dc.w    3000 gold player has (starts at 5000)
 potion_count:    dc.w    0 potions player has (starts at 0)
 weapon_count:    dc.w    5 number of weapons player has (starts at 5)
-distance_travelled: dc.w    700 how far the player has gone (800 to finish journey)
+distance_travelled: dc.w    0 how far the player has gone (800 to finish journey)
 
-
-mine_loc    EQU 100    A location where a mine is found
 noir_loc    EQU 800    Location of destination
 
 
@@ -378,8 +376,8 @@ gameplay:
     trap    #15 wait for input
     
     cmp     #100, health
-    blt     ask_heal
-    bge     continue_on
+    blt     ask_heal ask if the player wants to heal if they are not at full health
+    bge     continue_on continue on otherwise
 
 ask_heal:
 
@@ -430,6 +428,7 @@ hud:
     move.w  score,D1     retrieve the value A3 point to and move to D1
     move.b  #3,D0       move literal 3 to D0
     trap    #15         intrepret value in D0, which 3 which displays D1
+
     bsr     decorate
     lea     gold_msg,A1
     move.b  #14,D0
@@ -487,8 +486,6 @@ hud:
     
     bsr     decorate
     
-    
-    
     move.b  #4,D0
     trap    #15 wait for input to continue
     
@@ -496,7 +493,65 @@ hud:
     bra     gameloop
 
     rts
+    
+hud_win:
+    bsr     decorate
+    lea     gold_msg,A1
+    move.b  #14,D0
+    trap    #15 display message saying how much gold user has
+    
+    move.w  gold,D1
+    move.b  #3,D0
+    trap    #15 display the number of gold
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
+    bsr     decorate
+    
+    lea     potion_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.w  potion_count,D1
+    move.b  #3,D0
+    trap    #15 display the number of potions
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
+    bsr     decorate
 
+    lea     weapon_msg,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.w  weapon_count,D1
+    move.b  #3,D0
+    trap    #15 display the number of weapons
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
+    bsr     decorate
+    
+    lea     player_curr_health,A1
+    move.b  #14,D0
+    trap    #15
+    
+    move.w  health,D1
+    move.b  #3,D0
+    trap    #15 display the number of weapons
+    
+    lea     empty_msg,A1
+    move.b  #14,D0
+    trap    #15 put in a line break
+    
+    bsr     decorate
+    rts
 *-------------------------------------------------------
 *-----------------------Event Collisions----------------
 * Used to see if the Player is at an event
@@ -578,9 +633,7 @@ collision_hit:
     move.b  #4,D0 wait for player to press something before continuing
     trap    #15
     
-    bra     end
-    
-    rts
+    bra     result_score
     
 collision_miss:
     *miss
@@ -667,7 +720,6 @@ entered_weapon_shop:
 * When fighting an Enemy, we go here.
 *-------------------------------------------------------
 battle_start:
-    move.w health, D3 move the player's current health into D3
     move.w #60, D4     move enemy health into D4
     
     cmp.w     #0, weapon_count
@@ -685,7 +737,7 @@ boss_battle_start:
 battle_no_weapon:
 
 
-    sub.w #10, D3
+    sub.w #10, health
     sub.w #10, D4
     
     lea     battle_player_nullWep_hit,A1 say that they have no weapons, so they deal less damage
@@ -700,7 +752,7 @@ battle_no_weapon:
     move.b  #14,D0
     trap    #15
 
-    move.w  D3, D1
+    move.w  health, D1
     move.b  #3, D0
     trap    #15 display player health
     
@@ -720,7 +772,7 @@ battle_no_weapon:
     move.b  #14,D0
     trap    #15
  
-    cmp     #0, D3 if the player's health is less than or equal to 0
+    cmp     #0, health if the player's health is less than or equal to 0
     ble     game_over they have lost the fight
     
     cmp     #0, D4 if the enemy's health is less than or equal to 0
@@ -735,7 +787,7 @@ battle_no_weapon:
     
 battle_weapon: 
 * same as battle no wep but player deals 20 damage instead of 10
-    sub.w #10, D3
+    sub.w #10, health
     sub.w #20, D4
     
     lea     battle_player_hit,A1
@@ -750,7 +802,7 @@ battle_weapon:
     move.b  #14,D0
     trap    #15
 
-    move.w  D3, D1
+    move.w  health, D1
     move.b  #3, D0
     trap    #15
     
@@ -770,10 +822,11 @@ battle_weapon:
     move.b  #14,D0
     trap    #15
  
-    cmp     #0, D3 if the player's health is less than or equal to 0
+    cmp     #0, health if the player's health is less than or equal to 0
     ble     game_over they have lost the fight
-    
-* NOTE: Win check is not done as the Player cannot win in this scenario, if they have no weapons, they will lose.
+        
+    cmp     #0, D4 if the enemy's health is less than or equal to 0
+    ble     battle_won they have won the fight (and didnt have any weapons)
     
     move.b  #4,D0
     trap    #15 if no one has lost, wait for input before continuing
@@ -782,7 +835,7 @@ battle_weapon:
     
 boss_battle_no_weapon:
 
-    sub.w #10, D3
+    sub.w #10, health
     sub.w #5, D4
     
     lea     boss_battle_player_nullWep_hit,A1 say that they have no weapons, so they deal less damage
@@ -797,7 +850,7 @@ boss_battle_no_weapon:
     move.b  #14,D0
     trap    #15
 
-    move.w  D3, D1
+    move.w  health, D1
     move.b  #3, D0
     trap    #15 display player health
     
@@ -817,7 +870,7 @@ boss_battle_no_weapon:
     move.b  #14,D0
     trap    #15
  
-    cmp     #0, D3 if the player's health is less than or equal to 0
+    cmp     #0, health if the player's health is less than or equal to 0
     ble     game_over they have lost the fight
     
     cmp     #0, D4 if the enemy's health is less than or equal to 0
@@ -830,7 +883,7 @@ boss_battle_no_weapon:
     
 boss_battle_weapon: 
 * same as boss battle no wep but player deals 20 damage instead of 10
-    sub.w #10, D3
+    sub.w #10, health
     sub.w #20, D4
     
     lea     battle_player_hit,A1
@@ -845,7 +898,7 @@ boss_battle_weapon:
     move.b  #14,D0
     trap    #15
 
-    move.w  D3, D1
+    move.w  health, D1
     move.b  #3, D0
     trap    #15
     
@@ -865,7 +918,7 @@ boss_battle_weapon:
     move.b  #14,D0
     trap    #15
  
-    cmp     #0, D3 if the player's health is less than or equal to 0
+    cmp     #0, health if the player's health is less than or equal to 0
     ble     game_over they have lost the fight
     
     cmp     #0, D4 if the enemy's health is less than or equal to 0
@@ -1020,6 +1073,38 @@ endl:
     rts
     
 *-------------------------------------------------------
+*-------------------Scoring Results---------------------
+*----See how much score user has gained from winning----
+*-------------------------------------------------------
+result_score:
+    bsr hud_win
+    move.w  potion_count, D2
+    add.w   D2, score
+    
+    move.w  weapon_count, D2
+    add.w   D2, score
+    
+    move.w  gold, D2
+    add.w   D2, score
+    
+    move.w  health, D2
+    add.w   D2, score
+    
+    lea     hud_win_msg,A1
+    move.b  #14,D0
+    trap    #15
+    move.w  score,D1     retrieve the value A3 point to and move to D1
+    move.b  #3,D0       move literal 3 to D0
+    trap    #15         intrepret value in D0, which 3 which displays D1
+    
+    move.b  #4,D0
+    trap    #15     wait before exiting game now that the player has won
+    
+    bra end
+    
+    
+    
+*-------------------------------------------------------
 *-------------------Data Delarations--------------------
 *-------------------------------------------------------
 
@@ -1133,11 +1218,14 @@ hit_msg:             dc.b    'You made it!',0
 miss_msg:            dc.b    'Nothing eventful happened.',0
 loop_msg:            dc.b    '.',0
 hud_msg:             dc.b    'Score : ',0
+hud_win_msg:         dc.b    'Final Tallied Score : ',0
 empty_msg            dc.b    '',$0D,$0A,0
 
 
 
     end start
+
+
 
 
 
